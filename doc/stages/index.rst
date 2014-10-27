@@ -4,33 +4,11 @@
 Stage Reference
 ******************************************************************************
 
-
-Readers & Writers
-=================
-
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   drivers.buffer.reader
-   drivers.las.reader
-   drivers.las.writer
-   drivers.pgpointcloud.reader
-   drivers.pgpointcloud.writer
-   drivers.faux.reader
-   drivers.faux.writer
-   drivers.csardb.reader
-   drivers.csar.reader
-   drivers.nitf.reader
-   drivers.nitf.writer
-   drivers.oci.reader
-   drivers.oci.writer
-   drivers.p2g.writer
-   drivers.pcd.reader
-   drivers.pcd.writer
-   drivers.qfit.reader
-   drivers.sbet.reader
-   drivers.text.writer
-
+   ../api/cpp/reader.rst
+   ../api/cpp/writer.rst
 
 Filters
 =======

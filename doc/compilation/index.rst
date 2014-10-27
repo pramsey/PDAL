@@ -14,4 +14,5 @@ Contents:
    unix
    windows
    dependencies
+   vagrant
    

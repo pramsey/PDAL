@@ -1,14 +1,8 @@
-.. _cpp-pdal-schema:
+.. _cpp-pdal-pointcontext:
 
 ******************************************************************************
-pdal::Schema
+pdal::PointContext
 ******************************************************************************
 
-
-.. doxygenclass:: pdal::Schema
+.. doxygenclass:: pdal::PointContext
    :members:
-
-.. doxygenenum:: pdal::schema::Orientation
-   
-.. doxygentypedef:: pdal::schema::Map
-

@@ -44,6 +44,13 @@ namespace drivers
 namespace buffer
 {
 
+/*!
+  \rst
+  The **BufferReader** stage is a special stage that allows you to read data
+  from your own PointBuffer rather than fetching the data from a specific
+  reader.
+  \endrst
+*/
 class PDAL_DLL BufferReader : public pdal::Reader
 {
 public:

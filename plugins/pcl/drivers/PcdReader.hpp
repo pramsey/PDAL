@@ -53,7 +53,34 @@ namespace drivers
 namespace pcd
 {
 
-class PDAL_DLL PcdReader : public pdal::Reader
+/*!
+  \rst
+  The **PCD Reader** supports reading from `Point Cloud Data (PCD)
+  <http://pointclouds.org/documentation/tutorials/pcd_file_format.php>`_
+  formatted files, which are used by the `Point Cloud Library (PCL)
+  <http://pointclouds.org>`_.
+ 
+  **Example**
+
+  ::
+
+      <?xml version="1.0" encoding="utf-8"?>
+      <Pipeline version="1.0">
+        <Writer type="drivers.text.writer">
+          <Option name="filename">outputfile.txt</Option>
+          <Reader type="drivers.pcd.reader">
+            <Option name="filename">inputfile.pcd</Option>
+          </Reader>
+        </Writer>
+      </Pipeline>
+ 
+  **Options**
+ 
+  filename
+    PCD file to read [Required]
+  \endrst
+*/
+class pdal_dll PcdReader : public pdal::reader
 {
 public:
     SET_STAGE_NAME("drivers.pcd.reader", "PCD Reader")
