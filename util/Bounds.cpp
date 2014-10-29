@@ -33,6 +33,7 @@
 ****************************************************************************/
 
 #include <iostream>
+#include <limits>
 #include <vector>
 
 #include "Bounds.hpp"
