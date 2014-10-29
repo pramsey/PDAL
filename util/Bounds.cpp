@@ -69,7 +69,6 @@ const double BOX3D::HIGHEST = (std::numeric_limits<double>::max)();
 
 std::istream& operator>>(std::istream& istr, BOX3D& bounds)
 {
-    std::cerr << "trying input #1!\n";
     istr.get();
     if (istr.eof())
     {
@@ -78,10 +77,8 @@ std::istream& operator>>(std::istream& istr, BOX3D& bounds)
         return istr;
     }
 
-    std::cerr << "trying input!\n";
     if (!istr.good())
     {
-        std::cerr << "Bad at beginning!\n";
         istr.setstate(std::ios_base::failbit);
         return istr;
     }
@@ -151,10 +148,7 @@ std::istream& operator>>(std::istream& istr, BOX3D& bounds)
         if (eat(istr,','))
             done = false;
         else if (eat(istr,')'))
-{
-    std::cerr << "Found closing paren!\n";
             done = true;
-}
         else
         {
             istr.setstate(std::ios_base::failbit);
@@ -162,7 +156,6 @@ std::istream& operator>>(std::istream& istr, BOX3D& bounds)
         }
         v.push_back(low);
         v.push_back(high);
-        std::cerr << "Vcount = " << v.size() << "!\n";
     }
 
     BOX3D xxx;
@@ -183,19 +176,9 @@ std::istream& operator>>(std::istream& istr, BOX3D& bounds)
         xxx.maxz = v[5];
     }
     else
-{
-    std::cerr << "Failure!\n";
         istr.setstate(std::ios_base::failbit);
-}
     eat(istr, isspace);
     bounds = xxx;
-std::cerr << "Returning istr!\n";
-if (istr.bad())
-    std::cerr << "Bad stream!\n";
-if (istr.fail())
-    std::cerr << "Failed stream!\n";
-if (istr.eof())
-    std::cerr << "EOF stream!\n";
     return istr;
 }
 
