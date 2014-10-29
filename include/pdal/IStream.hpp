@@ -78,6 +78,10 @@ public:
         { m_stream->seekg(offset, std::istream::cur); }
     std::streampos position() const
         { return m_stream->tellg(); }
+    bool good() const
+        { return m_stream->good(); }
+    std::istream *stream()
+        { return m_stream; }
     void pushStream(std::istream *strm)
     {
         m_streams.push(m_stream);

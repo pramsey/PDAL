@@ -39,7 +39,7 @@
 #include <boost/uuid/uuid_io.hpp>
 
 #include <pdal/drivers/las/SummaryData.hpp>
-
+#include <pdal/Utils.hpp>
 
 namespace pdal
 {

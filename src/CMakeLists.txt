@@ -16,6 +16,7 @@
 #   ...
 
 set(PDAL_HEADERS_DIR "${PROJECT_SOURCE_DIR}/include/pdal")
+set(PDAL_UTIL_DIR "${PROJECT_SOURCE_DIR}/util")
 set(PDAL_HPP "")
 set(PDAL_CPP "")
 
@@ -29,7 +30,6 @@ set(PDAL_KERNEL_SRC "${PROJECT_SOURCE_DIR}/src/${PDAL_KERNEL_PATH}")
 set(PDAL_BASE_HPP
   "${PDAL_HEADERS_DIR}/pdal_error.hpp"
   "${PDAL_HEADERS_DIR}/pdal_types.hpp"
-  "${PDAL_HEADERS_DIR}/Bounds.hpp"
   "${PDAL_HEADERS_DIR}/Charbuf.hpp"
   "${PDAL_HEADERS_DIR}/Dimension.hpp"
   "${PDAL_HEADERS_DIR}/Drivers.hpp"
@@ -78,7 +78,6 @@ if (PDAL_HAVE_LIBXML2)
 endif()
 
 set(PDAL_BASE_CPP
-  Bounds.cpp
   Charbuf.cpp
   FileUtils.cpp
   Filter.cpp
@@ -729,7 +728,7 @@ source_group("Source Files\\plang" FILES ${PDAL_PLANG_CPP})
 
 
 # Standard include directory of PDAL library
-include_directories(../include)
+include_directories(../util ../include)
 
 ###############################################################################
 # Targets settings
@@ -804,6 +803,8 @@ if (WITH_JSONCPP OR WITH_GREYHOUND)
     target_link_libraries(${PDAL_LIB_NAME} ${PDAL_LINKAGE} ${JSONCPP_LIBRARIES})
 endif()
 
+add_subdirectory(${PDAL_UTIL_DIR} "${CMAKE_CURRENT_BINARY_DIR}/util")
+
 target_link_libraries(${PDAL_LIB_NAME} ${PDAL_LINKAGE}
     "${CMAKE_THREAD_LIBS_INIT}"
     "${CMAKE_DL_LIBS}"
@@ -815,6 +816,7 @@ target_link_libraries(${PDAL_LIB_NAME} ${PDAL_LINKAGE}
     "${HEXER_LIBRARY}"
     "${ORACLE_LIBRARY}"
     "${ZLIB_LIBRARIES}"
+    PdalUtil
 )
 
 message(STATUS "Using boost lib: ${Boost_LIBRARIES}")

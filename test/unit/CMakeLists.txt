@@ -207,6 +207,7 @@ source_group("Source Files\\config" FILES ${PDAL_UNITTEST_CONFIG_SRC})
 INCLUDE_DIRECTORIES(
     .
     ${CMAKE_CURRENT_BINARY_DIR}
+    ../../util
     ../../include
     ${GDAL_INCLUDE_DIR}
     ${GEOTIFF_INCLUDE_DIR}
