@@ -64,10 +64,6 @@ MAKE_READER_CREATOR(LasReader, pdal::drivers::las::Reader)
 MAKE_READER_CREATOR(BpfReader, pdal::BpfReader)
 MAKE_READER_CREATOR(BufferReader, drivers::buffer::BufferReader)
 
-#ifdef PDAL_HAVE_GREYHOUND
-MAKE_READER_CREATOR(GreyhoundReader, pdal::drivers::greyhound::GreyhoundReader)
-#endif
-
 #ifdef PDAL_HAVE_ORACLE
 #ifndef USE_PDAL_PLUGIN_OCI
 MAKE_READER_CREATOR(OciReader, pdal::drivers::oci::OciReader)
@@ -112,23 +108,15 @@ MAKE_FILTER_CREATOR(Decimation, pdal::filters::Decimation)
 MAKE_FILTER_CREATOR(Ferry, pdal::filters::Ferry)
 MAKE_FILTER_CREATOR(HexBin, pdal::filters::HexBin)
 MAKE_FILTER_CREATOR(Merge, pdal::filters::Merge)
-//MAKE_FILTER_CREATOR(InPlaceReprojection, pdal::filters::InPlaceReprojection)
+MAKE_FILTER_CREATOR(Reprojection, pdal::filters::Reprojection)
+MAKE_FILTER_CREATOR(Sort, pdal::filters::Sort)
+MAKE_FILTER_CREATOR(Splitter, pdal::filters::Splitter)
+MAKE_FILTER_CREATOR(Stats, pdal::filters::Stats)
 
 #ifdef PDAL_HAVE_PYTHON
 MAKE_FILTER_CREATOR(Predicate, pdal::filters::Predicate)
 MAKE_FILTER_CREATOR(Programmable, pdal::filters::Programmable)
 #endif
-
-MAKE_FILTER_CREATOR(Reprojection, pdal::filters::Reprojection)
-//MAKE_FILTER_CREATOR(Scaling, pdal::filters::Scaling)
-//MAKE_FILTER_CREATOR(Selector, pdal::filters::Selector)
-MAKE_FILTER_CREATOR(Splitter, pdal::filters::Splitter)
-MAKE_FILTER_CREATOR(Stats, pdal::filters::Stats)
-
-//
-// define the functions to create the multifilters
-//
-//MAKE_MULTIFILTER_CREATOR(Mosaic, pdal::filters::Mosaic)
 
 //
 // define the functions to create the writers
@@ -180,9 +168,11 @@ StageFactory::StageFactory()
 
 std::string StageFactory::inferReaderDriver(const std::string& filename)
 {
+    StageFactory f;
+
     // filename may actually be a greyhound uri + pipelineId
     std::string http = filename.substr(0, 4);
-    if (boost::iequals(http, "http"))
+    if (boost::iequals(http, "http") && f.getReaderCreator("drivers.greyhound.reader"))
         return "drivers.greyhound.reader";
 
     std::string ext = boost::filesystem::extension(filename);
@@ -190,7 +180,9 @@ std::string StageFactory::inferReaderDriver(const std::string& filename)
     drivers["las"] = "drivers.las.reader";
     drivers["laz"] = "drivers.las.reader";
     drivers["bin"] = "drivers.terrasolid.reader";
-    drivers["greyhound"] = "drivers.greyhound.reader";
+
+    if (f.getReaderCreator("drivers.greyhound.reader"))
+        drivers["greyhound"] = "drivers.greyhound.reader";
     drivers["qi"] = "drivers.qfit.reader";
     drivers["nitf"] = "drivers.nitf.reader";
     drivers["ntf"] = "drivers.nitf.reader";
@@ -200,7 +192,6 @@ std::string StageFactory::inferReaderDriver(const std::string& filename)
     drivers["icebridge"] = "drivers.icebridge.reader";
     drivers["sqlite"] = "drivers.sqlite.reader";
     
-    StageFactory f;
     if (f.getReaderCreator("drivers.pcd.reader"))
         drivers["pcd"] = "drivers.pcd.reader";
 
@@ -393,11 +384,6 @@ void StageFactory::registerKnownReaders()
     REGISTER_READER(QfitReader, pdal::drivers::qfit::Reader);
     REGISTER_READER(TerrasolidReader, pdal::drivers::terrasolid::Reader);
     REGISTER_READER(BpfReader, pdal::BpfReader);
-
-#ifdef PDAL_HAVE_GREYHOUND
-    REGISTER_READER(GreyhoundReader, pdal::drivers::greyhound::GreyhoundReader);
-#endif
-
     REGISTER_READER(SbetReader, pdal::drivers::sbet::SbetReader);
 
 #ifdef PDAL_HAVE_HDF5
@@ -416,21 +402,17 @@ void StageFactory::registerKnownFilters()
     REGISTER_FILTER(Crop, pdal::filters::Crop);
     REGISTER_FILTER(Decimation, pdal::filters::Decimation);
     REGISTER_FILTER(Ferry, pdal::filters::Ferry);
-    REGISTER_FILTER(Reprojection, pdal::filters::Reprojection);
     REGISTER_FILTER(HexBin, pdal::filters::HexBin);
     REGISTER_FILTER(Merge, pdal::filters::Merge);
-//    REGISTER_FILTER(InPlaceReprojection, pdal::filters::InPlaceReprojection);
+    REGISTER_FILTER(Reprojection, pdal::filters::Reprojection);
+    REGISTER_FILTER(Sort, pdal::filters::Sort);
+    REGISTER_FILTER(Splitter, pdal::filters::Splitter);
+    REGISTER_FILTER(Stats, pdal::filters::Stats);
 
 #ifdef PDAL_HAVE_PYTHON
     REGISTER_FILTER(Predicate, pdal::filters::Predicate);
     REGISTER_FILTER(Programmable, pdal::filters::Programmable);
 #endif
-
-    REGISTER_FILTER(Reprojection, pdal::filters::Reprojection);
-//    REGISTER_FILTER(Scaling, pdal::filters::Scaling);
-//    REGISTER_FILTER(Selector, pdal::filters::Selector);
-    REGISTER_FILTER(Splitter, pdal::filters::Splitter);
-    REGISTER_FILTER(Stats, pdal::filters::Stats);
 }
 
 
@@ -469,13 +451,11 @@ void StageFactory::registerKnownWriters()
     REGISTER_WRITER(NitfWriter, pdal::drivers::nitf::Writer);
 #endif
 #endif
-
 }
 
 void StageFactory::loadPlugins()
 {
     using namespace boost::filesystem;
-
 
     std::string driver_path("PDAL_DRIVER_PATH");
     std::string pluginDir = Utils::getenv(driver_path);

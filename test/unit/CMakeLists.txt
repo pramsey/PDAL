@@ -37,9 +37,11 @@ SET(PDAL_UNITTEST_TEST_SRC
     MetadataTest.cpp
     OptionsTest.cpp
     PipelineManagerTest.cpp
+    PointContextTest.cpp
     PointBufferTest.cpp
     drivers/qfit/QFITReaderTest.cpp
     filters/ReprojectionFilterTest.cpp
+    filters/SortFilterTest.cpp
     drivers/sbet/SbetReaderTest.cpp
     drivers/sbet/SbetWriterTest.cpp
     SpatialReferenceTest.cpp
