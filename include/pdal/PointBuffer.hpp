@@ -166,6 +166,25 @@ public:
     Dimension::IdList dims() const
         { return m_context.dims(); }
 
+    std::vector<uint8_t> getBytes() const
+    {
+        std::vector<uint8_t> output;
+
+        size_t byteCount = PointBuffer::size() * m_context.pointSize();
+        output.reserve(byteCount);
+        output.resize(byteCount);
+
+        uint8_t* pos = &(output.front());
+        for (PointId i = 0; i < PointBuffer::size(); ++i)
+        {
+            for (const auto& dim : m_context.m_dims->m_used)
+            {
+                getFieldInternal(dim, i, pos);
+                pos += m_context.dimSize(dim);
+            }
+        }
+        return output;
+    }
 protected:
     PointContextRef m_context;
     std::vector<PointId> m_index;

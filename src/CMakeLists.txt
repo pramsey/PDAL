@@ -31,6 +31,7 @@ set(PDAL_BASE_HPP
   "${PDAL_HEADERS_DIR}/pdal_types.hpp"
   "${PDAL_HEADERS_DIR}/Bounds.hpp"
   "${PDAL_HEADERS_DIR}/Charbuf.hpp"
+  "${PDAL_HEADERS_DIR}/Compression.hpp"
   "${PDAL_HEADERS_DIR}/Dimension.hpp"
   "${PDAL_HEADERS_DIR}/Drivers.hpp"
   "${PDAL_HEADERS_DIR}/FileUtils.hpp"
@@ -77,6 +78,10 @@ if (PDAL_HAVE_LIBXML2)
   SET (PDAL_XML_SRC XMLSchema.cpp)
 endif()
 
+if (PDAL_HAVE_LAZPERF)
+    SET(PDAL_LAZPERF_SRC Compression.cpp)
+endif()
+
 set(PDAL_BASE_CPP
   Bounds.cpp
   Charbuf.cpp
@@ -104,6 +109,7 @@ set(PDAL_BASE_CPP
   Writer.cpp
   third/md5-pdal.c
   ${PDAL_XML_SRC}
+  ${PDAL_LAZPERF_SRC}
     ${PDAL_KERNEL_SRC}/Kernel.cpp
     ${PDAL_KERNEL_SRC}/KernelFactory.cpp
     ${PDAL_KERNEL_SRC}/KernelInfo.cpp

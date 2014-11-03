@@ -16,6 +16,10 @@ if (LIBXML2_FOUND)
 SET (PDAL_UNITTEST_XMLSCHEMA_TEST XMLSchemaTest.cpp)
 endif()
 
+if (PDAL_HAVE_LAZPERF)
+    SET(PDAL_LAZPERF_SRC CompressionTest.cpp)
+endif()
+
 SET(PDAL_UNITTEST_TEST_SRC
     BoundsTest.cpp
     drivers/bpf/BPFTest.cpp
@@ -54,6 +58,7 @@ SET(PDAL_UNITTEST_TEST_SRC
     UserCallbackTest.cpp
     UtilsTest.cpp
     ${PDAL_UNITTEST_XMLSCHEMA_TEST}
+    ${PDAL_LAZPERF_SRC}
     )
 
 if(WITH_APPS)
