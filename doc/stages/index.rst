@@ -38,6 +38,7 @@ Filters
 .. toctree::
    :maxdepth: 1
 
+   filters.attribute
    filters.colorization
    filters.chipper
    filters.crop
@@ -48,5 +49,5 @@ Filters
    filters.predicate
    filters.programmable
    filters.reprojection
-
+   filters.sort
 
