@@ -32,7 +32,7 @@
  * OF SUCH DAMAGE.
  ****************************************************************************/
 
-#include <vector>
+#include <deque>
 #include <string>
 
 #include "Header.hpp"
@@ -50,7 +50,7 @@ class Dumper
 {
 
 public:
-    Dumper(const std::vector<std::string>& args)
+    Dumper(const std::deque<std::string>& args) : m_out(&std::cout)
         { m_error = processArgs(args); }
     void dump();
     int error()
@@ -61,8 +61,10 @@ private:
     Header m_header;
     Vlr m_zipVlr;
     int m_error;
+    ofstream m_fout;
+    ostream *m_out;
 
-    int processArgs(const std::vector<std::string>& args);
+    int processArgs(std::deque<std::string> args);
     void readPoints(ILeStream& in);
     void readCompressedPoints(ILeStream& in);
 };

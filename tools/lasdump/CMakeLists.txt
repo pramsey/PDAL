@@ -11,6 +11,8 @@ set(PDAL_UTIL "${ROOT_PATH}/util")
 set(PDAL_CMAKE "${ROOT_PATH}/cmake")
 set(PDAL_MODULES "${PDAL_CMAKE}/modules")
 
+include(${PDAL_CMAKE}/compiler_options.cmake)
+
 set(CMAKE_MODULE_PATH ${PDAL_MODULES} ${CMAKE_MODULE_PATH})
 
 add_subdirectory(${PDAL_UTIL} "${CMAKE_CURRENT_BINARY_DIR}/util")
@@ -30,8 +32,8 @@ set (HEADERS
 
 find_package(LASZIP)
 
-add_executable(Lasdump ${SOURCES} ${HEADERS} )
-target_link_libraries(Lasdump
+add_executable(lasdump ${SOURCES} ${HEADERS} )
+target_link_libraries(lasdump
     PdalUtil
     ${LASZIP_LIBRARIES}
 )

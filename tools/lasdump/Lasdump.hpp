@@ -59,7 +59,7 @@ inline std::ostream& operator << (std::ostream& out, const Exception& ex)
 }
 
 
-inline int32_t cksum(const char *c, size_t size)
+inline int32_t cksum(void *c, size_t size)
 {
     int32_t sum = 0;
 
@@ -79,12 +79,12 @@ inline int32_t cksum(const char *c, size_t size)
 
 inline int32_t cksum(const std::vector<char>& v)
 {
-    return cksum(v.data(), v.size());
+    return cksum((void *)v.data(), v.size());
 }
 
 inline int32_t cksum(const std::vector<unsigned char>& v)
 {
-    return cksum((const char *)v.data(), v.size());
+    return cksum((void *)v.data(), v.size());
 }
 
 } // namespace lasdump

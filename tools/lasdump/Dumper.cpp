@@ -44,7 +44,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    vector<string> args;
+    deque<string> args;
 
     for (int i = 1; i < argc; ++i)
         args.push_back(argv[i]);
@@ -78,7 +78,7 @@ void Dumper::dump()
         m_error = -1;
         return;
     }
-    cout << m_header;
+    *m_out << m_header;
 
     in.seek(m_header.vlrOffset());
     for (uint32_t i = 0; i < m_header.vlrCount(); ++i)
@@ -88,13 +88,13 @@ void Dumper::dump()
         in >> vlr;
         if (vlr.matches("laszip encoded", 22204))
             m_zipVlr = vlr;
-        cout << vlr;
+        *m_out << vlr;
     }
     if (m_header.versionEquals(1, 0))
     {
         uint16_t dataStartSig;
         in >> dataStartSig;
-        cout << "Data start signature: " << dataStartSig << "\n";
+        *m_out << "Data start signature: " << dataStartSig << "\n";
     }
 
     // Seek to start of points and dump.
@@ -115,7 +115,7 @@ void Dumper::dump()
         EVlr vlr;
 
         in >> vlr;
-        cout << vlr;
+        *m_out << vlr;
     }
     return;
 }
@@ -128,7 +128,7 @@ void Dumper::readPoints(ILeStream& in)
     for (uint64_t i = 0; i < m_header.pointCount(); ++i)
     {
         in.get(buf);
-        cout << cksum(buf) << "\n";
+        *m_out << cksum(buf) << "\n";
     }
 }
 
@@ -158,21 +158,48 @@ void Dumper::readCompressedPoints(ILeStream& in)
 
     unzipper.open(*in.stream(), &zip);
 
-    for (int i = 0; i < m_header.pointCount(); ++i)
+    for (size_t i = 0; i < m_header.pointCount(); ++i)
     {
         unzipper.read(point);
-        cout << cksum(pointData) << "\n";
+        *m_out << cksum(pointData) << "\n";
     }
 }
 
 
-int Dumper::processArgs(const vector<string>& args)
+int Dumper::processArgs(deque<string> args)
 {
+
+    auto usage = [](const std::string& err = "")
+    {
+        if (!err.empty())
+            std::cerr << "Error: " << err << "\n";
+        std::cerr << "Usage: lasdump [-o <output filename>] <las/las file>\n";
+    };
+
+    if (args.size() == 3)
+    {
+        if (args[0] != "-o")
+        {
+            usage();
+            return -1;
+        }
+        args.pop_front();
+
+        m_fout = ofstream(args[0]);
+        m_out = &m_fout;
+        if (!*m_out)
+        {
+            usage("Couldn't open output file.");
+            return -1;
+        }
+        args.pop_front();
+    }
     if (args.size() != 1)
     {
-        std::cerr << "usage: lasdump <filename>\n";
+        usage();
         return -1;
     }
+
     m_filename = args[0];
     return 0;
 }
