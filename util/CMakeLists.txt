@@ -1,1 +1,1 @@
-add_library(PdalUtil Bounds.cpp Bounds.hpp)
+add_library(PdalUtil SHARED Bounds.cpp Bounds.hpp)
