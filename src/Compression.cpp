@@ -198,7 +198,7 @@ std::vector<uint8_t> Compress(PointContextRef ctx, const PointBuffer& buffer)
 
 
 
-std::vector<uint8_t> Decompress(PointContextRef ctx, size_t howMany)
+PointBufferPtr Decompress(PointContextRef ctx, size_t howMany)
 {
     using namespace laszip;
     using namespace laszip::formats;
@@ -312,8 +312,9 @@ std::vector<uint8_t> Decompress(PointContextRef ctx, size_t howMany)
         i ++;
     }
 
+    PointBufferPtr b = PointBufferPtr(new PointBuffer(s.buf, ctx));
 
-    return s.buf;
+    return b;
 
 
 }

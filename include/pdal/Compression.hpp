@@ -45,7 +45,7 @@ namespace pdal
 {
 
     std::vector<uint8_t> Compress(PointContextRef ctx, const PointBuffer& buffer);
-    std::vector<uint8_t> Decompress(PointContextRef ctx, size_t howMany);
+    PointBufferPtr  Decompress(PointContextRef ctx, size_t howMany);
 
 } // namespace pdal
 

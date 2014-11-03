@@ -239,6 +239,25 @@ public:
         }
         return output;
     }
+
+    PointBuffer(const std::vector<uint8_t>& bytes, PointContextRef ctx) : m_context(ctx)
+    {
+
+        size_t pointCount = bytes.size() / ctx.pointSize();
+        if (bytes.size() % ctx.pointSize())
+            throw pdal_error("byte count is not a multiple of point size!");
+
+        const uint8_t* pos = &(bytes[0]);
+        for (PointId i = 0; i < pointCount; ++i)
+        {
+            for (const auto& dim : ctx.m_dims->m_used)
+            {
+                setFieldInternal(dim, i, pos);
+                pos += m_context.dimSize(dim);
+            }
+        }
+    }
+
 protected:
     PointContextRef m_context;
     std::vector<PointId> m_index;

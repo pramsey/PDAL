@@ -68,15 +68,15 @@ BOOST_AUTO_TEST_CASE(test_compress)
     PointBufferSet buffers = reader.execute(ctx);
     PointBufferPtr buffer = *buffers.begin();
 
+    BOOST_CHECK_EQUAL(ctx.pointSize(), 52);
     std::vector<uint8_t> compressed = Compress(ctx, *buffer);
     BOOST_CHECK_EQUAL(buffer->getBytes().size(), 55380);
     BOOST_CHECK_EQUAL(compressed.size(), 31889);
 
-    PointBuffer output(ctx);
+    BOOST_CHECK_EQUAL(ctx.pointSize(), 52);
+    PointBufferPtr b = Decompress(ctx, buffer->size());
 
-    std::vector<uint8_t> decompressed = Decompress(ctx, buffer->size());
-
-    BOOST_CHECK_EQUAL(decompressed.size(), 55380);
+    BOOST_CHECK_EQUAL(b->size(), 1065);
 
 
 //     BOOST_CHECK(opts.hasOption("bounds"));
