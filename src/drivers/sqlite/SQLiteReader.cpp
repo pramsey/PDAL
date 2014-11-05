@@ -115,7 +115,7 @@ pdal::SpatialReference
 SQLiteReader::fetchSpatialReference(std::string const& query) const
 {
     // Fetch the WKT for the SRID to set the coordinate system of this stage
-    log()->get(LogLevel::Debug) << "Fetching schema object" << std::endl;
+    log()->get(LogLevel::Debug) << "Fetching srid object" << std::endl;
 
     // ::soci::row r;
     // ::soci::indicator ind = ::soci::i_null;
@@ -195,6 +195,12 @@ void SQLiteReader::addDimensions(PointContextRef ctx)
 
     column const& s = r->at(0); // First column is schema
 
+    if (m_schemaFile.size())
+    {
+        std::ostream* out = FileUtils::createFile(m_schemaFile);
+        out->write(s.data.c_str(), s.data.size());
+        FileUtils::closeFile(out);
+    }
     m_patch->m_schema = schema::Reader(s.data).schema();
     m_patch->m_ctx = ctx;
 

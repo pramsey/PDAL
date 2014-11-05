@@ -48,47 +48,28 @@
 #include <pdal/Dimension.hpp>
 #include <pdal/PointContext.hpp>
 #include <pdal/PointBuffer.hpp>
+#include <pdal/Compression.hpp>
 
 namespace pdal
 {
 
-struct CompressionStream {
-    CompressionStream() : buf(), idx(0) {}
-
-    void putBytes(const unsigned char* b, size_t len) {
-        while(len --) {
-            buf.push_back(*b++);
-        }
-    }
-
-    void putByte(const unsigned char b) {
-        buf.push_back(b);
-    }
-
-    unsigned char getByte() {
-        return buf[idx++];
-    }
-
-    void getBytes(unsigned char *b, int len) {
-        for (int i = 0 ; i < len ; i ++) {
-            b[i] = getByte();
-        }
-    }
-
-    std::vector<unsigned char> buf;
-    size_t idx;
-};
+namespace compression
+{
 
 
-std::vector<uint8_t> Compress(PointContextRef ctx, const PointBuffer& buffer)
+void Compress(PointContextRef ctx,
+              const PointBuffer& buffer,
+              CompressionStream& output,
+              CompressionType::Enum ctype,
+              PointId start,
+              PointId end)
 {
     using namespace laszip;
     using namespace laszip::formats;
 
     typedef encoders::arithmetic<CompressionStream> EncoderType;
 
-    CompressionStream s;
-    EncoderType encoder(s);
+    EncoderType encoder(output);
     auto compressor = make_dynamic_compressor(encoder);
     const Dimension::IdList& dims = ctx.dims();
     for (auto di = dims.begin(); di != dims.end(); ++di)
@@ -182,30 +163,30 @@ std::vector<uint8_t> Compress(PointContextRef ctx, const PointBuffer& buffer)
     }
 
     std::vector<uint8_t> bytes = buffer.getBytes();
-    uint8_t* pos = &(bytes.front());
-    PointId i(0);
-    while (i != buffer.size())
+    size_t pointSize = ctx.pointSize();
+    uint8_t* pos = &(bytes.front())+ (pointSize * start);
+    if (end == 0) // Set to max
+        end = buffer.size();
+    uint8_t* end_pos = &(bytes.front())+ (pointSize * end);
+    while (pos != end_pos)
     {
         compressor->compress((const char*)pos);
-        pos += ctx.pointSize();
-        i ++;
+        pos += pointSize;
     }
 
     encoder.done();
-    return s.buf;
 }
 
 
 
 
-PointBufferPtr Decompress(PointContextRef ctx, size_t howMany)
+PointBufferPtr Decompress(PointContextRef ctx, CompressionStream& s, size_t howMany, CompressionType::Enum ctype)
 {
     using namespace laszip;
     using namespace laszip::formats;
 
     typedef decoders::arithmetic<CompressionStream> DecoderType;
 
-    CompressionStream s;
     s.buf.resize(howMany * ctx.pointSize());
     DecoderType decoder(s);
     auto decompressor = make_dynamic_decompressor(decoder);
@@ -318,4 +299,6 @@ PointBufferPtr Decompress(PointContextRef ctx, size_t howMany)
 
 
 }
+
+} // namespace compression
 } // namespace pdal

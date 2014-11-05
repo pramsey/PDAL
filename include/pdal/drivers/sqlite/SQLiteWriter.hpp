@@ -35,6 +35,7 @@
 #pragma once
 
 #include <pdal/Writer.hpp>
+#include <pdal/Compression.hpp>
 #include <pdal/drivers/sqlite/SQLiteCommon.hpp>
 #include <pdal/third/nanoflann.hpp>
 
@@ -104,6 +105,9 @@ private:
     std::string m_connection;
     std::string m_modulename;
     bool m_is3d;
+    bool m_doCompression;;
+    compression::CompressionStream m_compStream;
+    PointContextRef m_context;
 
 };
 

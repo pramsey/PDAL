@@ -366,24 +366,24 @@ Reader::~Reader()
 }
 
 
-// static void
-// print_element_names(xmlNode * a_node)
-// {
-// #ifdef PDAL_HAVE_LIBXML2
-// 
-//     xmlNode *cur_node = NULL;
-// 
-//     for (cur_node = a_node; cur_node; cur_node = cur_node->next)
-//     {
-//         if (cur_node->type == XML_ELEMENT_NODE)
-//         {
-//             printf("node type: Element, name: %s\n", cur_node->name);
-//         }
-// 
-//         print_element_names(cur_node->children);
-//     }
-// #endif
-// }
+static void
+print_element_names(xmlNode * a_node)
+{
+#ifdef PDAL_HAVE_LIBXML2
+//
+    xmlNode *cur_node = NULL;
+//
+    for (cur_node = a_node; cur_node; cur_node = cur_node->next)
+    {
+        if (cur_node->type == XML_ELEMENT_NODE)
+        {
+            printf("node type: Element, name: %s\n", cur_node->name);
+        }
+//
+        print_element_names(cur_node->children);
+    }
+#endif
+}
 
 std::string Reader::remapOldNames(std::string const& input)
 {
@@ -397,54 +397,70 @@ std::string Reader::remapOldNames(std::string const& input)
 }
 
 #ifdef PDAL_HAVE_LIBXML2
-pdal::Metadata Reader::LoadMetadata(xmlNode* startNode)
+pdal::MetadataNode Reader::LoadMetadata(xmlNode* startNode)
 {
 
-    pdal::Metadata output;
+    pdal::MetadataNode output;
 
 
     xmlNode* node = startNode;
 
+print_element_names(node);
 
-//     xmlChar* name = xmlGetProp(node, (const xmlChar*) "name");
-//     xmlChar* etype = xmlGetProp(node, (const xmlChar*) "type");
+//     xmlchar* name = xmlgetprop(node, (const xmlchar*) "name");
+//     xmlchar* etype = xmlgetprop(node, (const xmlchar*) "type");
 // print_element_names(node);
-    // std::cout << "node name: " << (const char*)node->name << std::endl;
-//         std::cout << "prop type: " << (const char*) etype << std::endl;
+//      std::cout << "node name: " << (const char*)node->name << std::endl;
+// //          std::cout << "prop type: " << (const char*) etype << std::endl;
+    if (boost::equals((const char*)node->name, "metadata")) // skip the first one
+    {
+        node = node->next;
+    }
 
-    // pdal::Metadata m((const char*) node->name);
-    // if (boost::iequals((const char*)etype, "blank"))
-    // {
-    //     // blank denotes a new Metadata instance.
-    //     if (node->children)
-    //         output.addMetadata(LoadMetadata(node->children));
-    // }
+    xmlChar* name = xmlGetProp(node, (const xmlChar*) "name");
+    xmlChar* etype = xmlGetProp(node, (const xmlChar*) "type");
+     std::cout << "node name: " << (const char*)node->name << std::endl;
+//          std::cout << "prop type: " << (const char*) etype << std::endl;
+    pdal::MetadataNode m((const char*) node->name);
+    if (!etype && boost::iequals((const char*) node->name, "root"))
+    {
+        if (node->children)
+            output.add(LoadMetadata(node->children));
+    }
+//     if (boost::iequals((const char*)etype, "blank"))
+//     {
+//         // blank denotes a new Metadata instance.
+//         if (node->children)
+//             output.add(LoadMetadata(node->children));
+//     }
 
-    //
 
     while (node != NULL)
     {
 
-        //     std::cout << "node name: " << (const char*)node->name << std::endl;
+             std::cout << "node loop name: " << (const char*)node->name << std::endl;
 
         if (node->properties)
         {
-//           xmlChar* name = xmlGetProp(node, (const xmlChar *)"name");
-//           xmlChar* etype = xmlGetProp(node, (const xmlChar *)"type");
-//            std::cout << "property name: " << (const char*)name << std::endl;
-            // std::cout << "proper type: " << (const char*)etype << std::endl;
+           xmlChar* name = xmlGetProp(node, (const xmlChar *)"name");
+           xmlChar* etype = xmlGetProp(node, (const xmlChar *)"type");
+//             std::cout << "property name: " << (const char*)name << std::endl;
+//              std::cout << "proper type: " << (const char*)etype << std::endl;
 
         }
 
-        // pdal::Metadata m((const char*) node->name);
-        // if (boost::iequals((const char*)etype.get(), "blank"))
-        // {
-        //     // blank denotes a new Metadata instance.
-        //     m.addMetadata(LoadMetadata(node));
-        // }
+        const char* description = (const char*)xmlGetProp(node, (const xmlChar*)"description");
+
+        const char* text = (const char*) xmlNodeGetContent(node);
+//          m.addOrUpdate((const char*) node->name, text, description);
+//          if (boost::iequals((const char*)etype, "root"))
+//          {
+//              // blank denotes a new Metadata instance.
+//              m.add(LoadMetadata(node));
+//          }
 
 
-        // output.addMetadata(m);
+         output.add(m);
 
         if (node->type == XML_ELEMENT_NODE)
         {
@@ -493,17 +509,19 @@ void Reader::Load()
             dimension = dimension->next;
             continue;
         }
-                
+
         // printf("node name: %s\n", (const char*)dimension->name);
-        // if (boost::equals((const char*)dimension->name, "metadata"))
-        // {
-        //     printf("metadata node name: %s\n", (const char*)dimension->name);
-        //
-        //
-        //     metadata.addMetadata(LoadMetadata(dimension));
-        //     dimension = dimension->next;
-        //     continue;
-        // }
+        if (boost::equals((const char*)dimension->name, "metadata"))
+        {
+            printf("metadata node name: %s\n", (const char*)dimension->name);
+
+
+//             metadata.addMetadata(LoadMetadata(dimension));
+            MetadataNode m = metadata.getNode();
+            m.add( LoadMetadata(dimension));
+            dimension = dimension->next;
+            continue;
+        }
 
         if (dimension->type != XML_ELEMENT_NODE ||
             !boost::iequals((const char*)dimension->name, "dimension"))
@@ -685,25 +703,9 @@ void Writer::write(TextWriterPtr writer)
 
     writeSchema(writer);
 
-    if (!m_metadata.empty())
-    {
-        xmlTextWriterStartElementNS(w, (const xmlChar*) "pc",
-            (const xmlChar*) "metadata", NULL);
-
-        boost::property_tree::ptree output;
-        PipelineWriter::writeMetadata(output, m_metadata);
-        std::ostringstream oss;
-        boost::property_tree::xml_parser::write_xml(oss, output);
-        std::string xml = oss.str();
-
-        // wipe off write_xml's xml declaration
-        boost::algorithm::erase_all(xml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>");
-        xmlTextWriterWriteRawLen(w, (const xmlChar*) xml.c_str(), xml.size());
-        xmlTextWriterEndElement(w);
-    }
-    
     xmlTextWriterEndElement(w);
     xmlTextWriterEndDocument(w);
+    xmlTextWriterFlush(w);
 #endif
 }
 
@@ -761,9 +763,27 @@ void Writer::writeSchema(TextWriterPtr writer)
     if (m_orientation == Orientation::DimensionMajor)
         orientation << "dimension";
     xmlTextWriterWriteElementNS(w, (const xmlChar*) "pc", (const xmlChar*) "orientation", NULL, (const xmlChar*) orientation.str().c_str());
+
+    if (!m_metadata.empty())
+    {
+        xmlTextWriterStartElementNS(w, (const xmlChar*) "pc",
+            (const xmlChar*) "metadata", NULL);
+
+        boost::property_tree::ptree output;
+        PipelineWriter::writeMetadata(output, m_metadata);
+        std::ostringstream oss;
+        boost::property_tree::xml_parser::write_xml(oss, output);
+        std::string xml = oss.str();
+
+        // wipe off write_xml's xml declaration
+        boost::algorithm::erase_all(xml, "<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+        xmlTextWriterWriteRawLen(w, (const xmlChar*) xml.c_str(), xml.size());
+        xmlTextWriterEndElement(w);
+    }
+
     xmlTextWriterEndElement(w);
     xmlTextWriterFlush(w);
-         
+
 #endif
 }
 

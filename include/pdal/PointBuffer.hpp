@@ -220,7 +220,7 @@ public:
     Dimension::IdList dims() const
         { return m_context.dims(); }
 
-    std::vector<uint8_t> getBytes() const
+    std::vector<uint8_t> getBytes(PointId start=0, PointId end=0) const
     {
         std::vector<uint8_t> output;
 
@@ -228,8 +228,10 @@ public:
         output.reserve(byteCount);
         output.resize(byteCount);
 
+        if (end == 0) end = PointBuffer::size();
+
         uint8_t* pos = &(output.front());
-        for (PointId i = 0; i < PointBuffer::size(); ++i)
+        for (PointId i = start; i < end; ++i)
         {
             for (const auto& dim : m_context.m_dims->m_used)
             {

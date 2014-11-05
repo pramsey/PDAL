@@ -38,6 +38,7 @@
 #include <pdal/pdal_internal.hpp>
 #include <pdal/FileUtils.hpp>
 
+#include <boost/format.hpp>
 
 #include <sstream>
 
@@ -69,6 +70,7 @@ SQLiteWriter::SQLiteWriter()
     , m_pointSize(0)
     , m_orientation(Orientation::PointMajor)
     , m_is3d(false)
+    , m_doCompression(false)
 {}
 
 void SQLiteWriter::processOptions(const Options& options)
@@ -95,6 +97,7 @@ void SQLiteWriter::processOptions(const Options& options)
     m_srid =
         m_options.getValueOrDefault<boost::uint32_t>("srid", 4326);
     m_is3d = m_options.getValueOrDefault<bool>("is3d", false);
+    m_doCompression = m_options.getValueOrDefault<bool>("compression", false);
 }
 
 
@@ -128,6 +131,7 @@ void SQLiteWriter::initialize()
 
 void SQLiteWriter::ready(PointContextRef ctx)
 {
+    m_context = ctx;
     m_dims = ctx.dims();
     // Determine types for the dimensions.  We use the default types when
     // they exist, float otherwise.
@@ -453,6 +457,16 @@ void SQLiteWriter::CreateCloud()
         boost::to_lower_copy(m_block_table) << "',?) ";
 
     schema::Writer writer(m_dims, m_types);
+    pdal::Metadata metadata;
+    if (m_doCompression)
+    {
+
+        Metadata metadata;
+        MetadataNode m = metadata.getNode();
+        m.add("compression", "lazperf");
+        m.add("version", "1.0");
+        writer.setMetadata(m);
+    }
     std::string xml = writer.getXML();
 
     records rs;
@@ -565,20 +579,20 @@ void SQLiteWriter::writeTile(PointBuffer const& buffer)
     boost::uint32_t point_data_length(0);
     boost::uint32_t schema_byte_size(0);
 
-    size_t outbufSize = m_pointSize * buffer.size();
-    std::unique_ptr<char> outbuf(new char[outbufSize]);
-    char *pos = outbuf.get();
-
-    for (PointId id = 0; id < buffer.size(); ++id)
+    if (m_doCompression)
     {
-        auto ti = m_types.begin();
-        for (auto di = m_dims.begin(); di != m_dims.end(); ++di, ++ti)
-        {
-            fillBuf(buffer, pos, *di, *ti, id);
-            pos += Dimension::size(*ti);
-        }
-        if (id % 100 == 0)
-            m_callback->invoke(id);
+        compression::Compress(m_context, buffer, m_compStream);
+
+        size_t originalSize = buffer.size() * m_context.pointSize();
+        size_t newSize = m_compStream.buf.size();
+        double percent = (double) newSize/(double) originalSize;
+        percent = percent * 100;
+
+        log()->get(LogLevel::Debug3) << "Compressing tile by " << boost::str(boost::format("%.2f") % (100- percent))<<"%" << std::endl;
+    }
+    else
+    {
+        m_compStream.buf = buffer.getBytes();
     }
 
     records rs;
@@ -595,7 +609,7 @@ void SQLiteWriter::writeTile(PointBuffer const& buffer)
     r.push_back(column(m_obj_id));
     r.push_back(column(m_block_id));
     r.push_back(column(buffer.size()));
-    r.push_back(blob(outbuf.get(), outbufSize));
+    r.push_back(blob((const char*)(&m_compStream.buf[0]), m_compStream.buf.size()));
     r.push_back(column(bounds));
     r.push_back(column(m_srid));
     r.push_back(column(box));

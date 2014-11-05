@@ -39,14 +39,67 @@
 #include <map>
 #include <vector>
 
-
-
 namespace pdal
 {
 
-    std::vector<uint8_t> Compress(PointContextRef ctx, const PointBuffer& buffer);
-    PointBufferPtr  Decompress(PointContextRef ctx, size_t howMany);
 
+namespace compression
+{
+
+
+namespace CompressionType
+{
+
+enum Enum
+{
+    None = 0,
+    Ght = 1,
+    Dimensional = 2,
+    Lazperf = 3,
+    Unknown = 256
+};
+
+} // namespace CompressionType
+
+
+
+struct CompressionStream {
+    CompressionStream() : buf(), idx(0) {}
+
+    void putBytes(const unsigned char* b, size_t len) {
+        while(len --) {
+            buf.push_back(*b++);
+        }
+    }
+
+    void putByte(const unsigned char b) {
+        buf.push_back(b);
+    }
+
+    unsigned char getByte() {
+        return buf[idx++];
+    }
+
+    void getBytes(unsigned char *b, int len) {
+        for (int i = 0 ; i < len ; i ++) {
+            b[i] = getByte();
+        }
+    }
+
+    std::vector<unsigned char> buf;
+    size_t idx;
+};
+
+
+    void Compress(PointContextRef ctx,
+                  const PointBuffer& buffer,
+                  CompressionStream& output,
+                  CompressionType::Enum c=CompressionType::Lazperf,
+                  PointId start=0,
+                  PointId end=0);
+    PointBufferPtr  Decompress(PointContextRef ctx, CompressionStream& s, size_t howMany, CompressionType::Enum c=CompressionType::Lazperf);
+
+} // compression
 } // namespace pdal
 
 

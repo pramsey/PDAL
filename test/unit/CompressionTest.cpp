@@ -69,20 +69,19 @@ BOOST_AUTO_TEST_CASE(test_compress)
     PointBufferPtr buffer = *buffers.begin();
 
     BOOST_CHECK_EQUAL(ctx.pointSize(), 52);
-    std::vector<uint8_t> compressed = Compress(ctx, *buffer);
+    compression::CompressionStream s;
+    compression::Compress(ctx, *buffer, s);
     BOOST_CHECK_EQUAL(buffer->getBytes().size(), 55380);
-    BOOST_CHECK_EQUAL(compressed.size(), 31889);
+    BOOST_CHECK_EQUAL(s.buf.size(), 31889);
 
-    BOOST_CHECK_EQUAL(ctx.pointSize(), 52);
-    PointBufferPtr b = Decompress(ctx, buffer->size());
+    compression::CompressionStream s2;
+    s2.buf = s.buf;
+    PointBufferPtr b = compression::Decompress(ctx, s2, 1000);
 
-    BOOST_CHECK_EQUAL(b->size(), 1065);
+    BOOST_CHECK_EQUAL(b->size(), 1000);
+    BOOST_CHECK_EQUAL(b->getBytes().size(), 52000);
 
-
-//     BOOST_CHECK(opts.hasOption("bounds"));
-//     BOOST_CHECK(!opts.hasOption("metes"));
-//     const boost::property_tree::ptree& pt = pdal::utils::toPTree(opts);
-//     BOOST_CHECK(pt.size() == 3);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+

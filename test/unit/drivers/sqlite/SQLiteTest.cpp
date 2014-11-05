@@ -72,10 +72,10 @@ Options getSQLITEOptions()
     options.add(connection);
 
     Option debug("debug", true, "debug");
-    // options.add(debug);
+    options.add(debug);
 
     Option verbose("verbose", 7, "verbose");
-    // options.add(verbose);
+    options.add(verbose);
 
     Option block_table_name("block_table_name", "PDAL_TEST_BLOCKS", "block_table_name");
     options.add(block_table_name);
@@ -116,8 +116,8 @@ Options getSQLITEOptions()
     Option cloud_column("cloud_column_name", "CLOUD", "");
     options.add(cloud_column);
 
-    // Option xml_schema_dump("xml_schema_dump", "sqlite-xml-schema-dump.xml", "");
-    // options.add(xml_schema_dump);
+    Option xml_schema_dump("xml_schema_dump", "sqlite-xml-schema-dump.xml", "");
+    options.add(xml_schema_dump);
 
     Option con_type("type", "sqlite", "");
     options.add(con_type);
@@ -157,11 +157,18 @@ BOOST_AUTO_TEST_CASE(SqliteTest_test_simple_las)
     drivers::las::Reader reader;
     reader.setOptions(ops1);
 
+    Options sqliteOptions = getSQLITEOptions();
+
+#ifdef PDAL_HAVE_LAZPERF
+    Option compression("compression", true, "");
+    sqliteOptions.add(compression);
+#endif
+
     {
         pdal::drivers::las::Reader writer_reader;
         writer_reader.setOptions(getSQLITEOptions());
         pdal::drivers::sqlite::SQLiteWriter writer_writer;
-        writer_writer.setOptions(getSQLITEOptions());
+        writer_writer.setOptions(sqliteOptions);
         writer_writer.setInput(&writer_reader);
 
         PointContext ctx;
@@ -173,24 +180,25 @@ BOOST_AUTO_TEST_CASE(SqliteTest_test_simple_las)
         writer_writer.execute(ctx);
     }
 
-//     {
-//         // Read the data
+    {
+        // Read the data
 //
-//         pdal::drivers::sqlite::SQLiteReader reader(getSQLITEOptions());
-//         PointContext ctx;
-//         reader.prepare(ctx);
-//         PointBuffer buffer(ctx);
+        pdal::drivers::sqlite::SQLiteReader reader;
+        reader.setOptions(getSQLITEOptions());
+        PointContext ctx;
+        reader.prepare(ctx);
+        PointBuffer buffer(ctx);
 //
-//         PointBufferSet pbSet = reader.execute(ctx);
-//         BOOST_CHECK_EQUAL(pbSet.size(), 1);
+        PointBufferSet pbSet = reader.execute(ctx);
+        BOOST_CHECK_EQUAL(pbSet.size(), 1);
 //
-//         boost::uint16_t r = buffer.getFieldAs<boost::uint16_t>(Dimension::Id::Red, 0);
-//         BOOST_CHECK_EQUAL(r, 68u);
-//         boost::int32_t x = buffer.getFieldAs<boost::int32_t>(Dimension::Id::X, 0);
-//         BOOST_CHECK_EQUAL(x, 637012);
-//         double xd = buffer.getFieldAs<double>(Dimension::Id::X, 0);
-//         BOOST_CHECK_CLOSE(xd, 637012.240, 0.001);
-//     }
+        boost::uint16_t r = buffer.getFieldAs<boost::uint16_t>(Dimension::Id::Red, 0);
+        BOOST_CHECK_EQUAL(r, 68u);
+        boost::int32_t x = buffer.getFieldAs<boost::int32_t>(Dimension::Id::X, 0);
+        BOOST_CHECK_EQUAL(x, 637012);
+        double xd = buffer.getFieldAs<double>(Dimension::Id::X, 0);
+        BOOST_CHECK_CLOSE(xd, 637012.240, 0.001);
+    }
     // FileUtils::deleteFile(temp_filename);
 #endif
 }
