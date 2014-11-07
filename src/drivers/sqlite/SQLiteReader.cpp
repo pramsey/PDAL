@@ -332,7 +332,7 @@ point_count_t SQLiteReader::readPatch(PointBuffer& buffer, point_count_t numPts)
     }
 
     m_patch->remaining = numRemaining;
-    std::cout << buffer << std::endl;
+//     std::cout << buffer << std::endl;
     return numRead;
 }
 
