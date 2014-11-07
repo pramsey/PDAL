@@ -38,6 +38,7 @@
 #include <pdal/Options.hpp>
 #include <pdal/Log.hpp>
 #include <pdal/XMLSchema.hpp>
+#include <pdal/Compression.hpp>
 
 #include <boost/algorithm/string.hpp>
 
@@ -115,17 +116,31 @@ typedef std::vector<row> records;
 class Patch
 {
 public:
-    Patch() : count(0), remaining(0), byte_size(0), bytes(0)
+    Patch() : count(0), remaining(0), m_isCompressed(false), m_compVersion("")
     {
     };
 
     point_count_t count;
     point_count_t remaining;
 
-    size_t byte_size;
-    std::vector<uint8_t> bytes;
     pdal::schema::XMLSchema m_schema;
     PointContextRef m_ctx;
+    MetadataNode m_metadata;
+    compression::CompressionStream m_compStream;
+    bool m_isCompressed;
+    std::string m_compVersion;
+
+    void decompress()
+        {
+
+            std::cout << "comp bytes: " << m_compStream.buf.size() << " count: " << count <<std::endl;
+            PointBufferPtr b = compression::Decompress(m_ctx, m_compStream, count);
+            m_compStream.buf = b->getBytes();
+        }
+
+    size_t byte_size()
+        { return m_compStream.buf.size(); }
+
     double xOffset() const
         { return m_schema.m_scale.m_x.m_offset; }
     double yOffset() const

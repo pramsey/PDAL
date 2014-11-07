@@ -201,8 +201,16 @@ void SQLiteReader::addDimensions(PointContextRef ctx)
         out->write(s.data.c_str(), s.data.size());
         FileUtils::closeFile(out);
     }
-    m_patch->m_schema = schema::Reader(s.data).schema();
+
+    schema::Reader reader(s.data);
+
+    m_patch->m_metadata = reader.getMetadata();
+    m_patch->m_schema = reader.schema();
     m_patch->m_ctx = ctx;
+
+//     ctx.registerDim(Dimension::Id::X);
+//     ctx.registerDim(Dimension::Id::Y);
+//     ctx.registerDim(Dimension::Id::Z);
 
     schema::DimInfoList& dims = m_patch->m_schema.m_dims;
     for (auto di = dims.begin(); di != dims.end(); ++di)
@@ -240,23 +248,60 @@ point_count_t SQLiteReader::readPatch(PointBuffer& buffer, point_count_t numPts)
 
     // Availability of positions already validated
     int32_t position = columns.find("POINTS")->second;
-    auto bytes = (*r)[position].blobBuf;
-    size_t size = (*r)[position].blobLen;
+    log()->get(LogLevel::Debug3) << "Bytes position: " <<  position << std::endl;
+
+    MetadataNode comp = m_patch->m_metadata.findChild("compression");
+    m_patch->m_isCompressed = boost::iequals(comp.value(), "lazperf");
+    m_patch->m_compVersion = m_patch->m_metadata.findChild("version").value();
+
     position = columns.find("NUM_POINTS")->second;
+    log()->get(LogLevel::Debug3) << "Bytes position: " <<  position << std::endl;
     int32_t count = boost::lexical_cast<int32_t>((*r)[position].data);
-    log()->get(LogLevel::Debug4) << "fetched patch with " << count <<
-        " points and " << size << " bytes bytesize: " << size << std::endl;
     m_patch->remaining = count;
     m_patch->count = count;
-    m_patch->bytes = bytes;
-    m_patch->byte_size = size;
+
+
+    log()->get(LogLevel::Debug3) << "patch compression? " << m_patch->m_isCompressed << std::endl;
+    log()->get(LogLevel::Debug3) << "patch compression version: " << m_patch->m_compVersion << std::endl;
+
+
+    position = columns.find("POINTS")->second;
+    const uint8_t* bytes(0);
+
+    std::vector <uint8_t> data;
+    size_t size (0);
+    if (m_patch->m_isCompressed)
+    {
+        data = (*r)[position].blobBuf;
+        log()->get(LogLevel::Debug3) << "Compressed byte size: " <<  data.size() << std::endl;
+        m_patch->m_compStream.buf = data;
+        log()->get(LogLevel::Debug3) << "Compressed byte size: " << m_patch->m_compStream.buf.size() << std::endl;
+        m_patch->decompress();
+        bytes = &(m_patch->m_compStream.buf[0]);
+        size = m_patch->m_compStream.buf.size();
+        if (!size)
+            throw pdal_error("Compressed patch size was 0!");
+        log()->get(LogLevel::Debug3) << "Uncompressed byte size: " << size << std::endl;
+
+    } else
+    {
+        data = (*r)[position].blobBuf;
+        bytes = &(data[0]);
+        size = (*r)[position].blobLen;
+        assert(data.size () == size);
+    }
+
+    log()->get(LogLevel::Debug4) << "fetched patch with " << count <<
+        " points and " <<  data.size() << " bytes bytesize: " << size << std::endl;
+
 
     point_count_t numRemaining = m_patch->remaining;
     PointId nextId = buffer.size();
     point_count_t numRead = 0;
 
     size_t offset = ((m_patch->count - m_patch->remaining) * m_point_size);
-    uint8_t *pos = &(m_patch->bytes.front()) + offset;
+    log()->get(LogLevel::Debug3) << "offset: " << offset << std::endl;
+    uint8_t const* pos = bytes + offset;
 
     schema::DimInfoList& dims = m_patch->m_schema.m_dims;
     while (numRead < numPts && numRemaining > 0)
@@ -287,7 +332,7 @@ point_count_t SQLiteReader::readPatch(PointBuffer& buffer, point_count_t numPts)
     }
 
     m_patch->remaining = numRemaining;
-
+    std::cout << buffer << std::endl;
     return numRead;
 }
 

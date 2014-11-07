@@ -579,20 +579,51 @@ void SQLiteWriter::writeTile(PointBuffer const& buffer)
     boost::uint32_t point_data_length(0);
     boost::uint32_t schema_byte_size(0);
 
-    if (m_doCompression)
-    {
-        compression::Compress(m_context, buffer, m_compStream);
+//     if (m_doCompression)
+//     {
+//         compression::Compress(m_context, buffer, m_compStream);
+//
+//         size_t originalSize = buffer.size() * m_context.pointSize();
+//         size_t newSize = m_compStream.buf.size();
+//         double percent = (double) newSize/(double) originalSize;
+//         percent = percent * 100;
+//
+//         log()->get(LogLevel::Debug3) << "Compressing tile by " << boost::str(boost::format("%.2f") % (100- percent))<<"%" << std::endl;
+//     }
+//     else
+//     {
+// //         m_compStream.buf.resize(buffer.size() * m_context.pointSize());
+// //         char *pos = (char*)&(m_compStream.buf[0]);
+// //       for (PointId id = 0; id < buffer.size(); ++id)
+// //         {
+// //             auto ti = m_types.begin();
+// //             for (auto di = m_dims.begin(); di != m_dims.end(); ++di, ++ti)
+// //             {
+// //                 fillBuf(buffer, pos, *di, *ti, id);
+// //                 pos += Dimension::size(*ti);
+// //             }
+// //             if (id % 100 == 0)
+// //                 m_callback->invoke(id);
+// //         }
+//         m_compStream.buf = buffer.getBytes();
+//         log()->get(LogLevel::Debug3) << "uncompressed size: " << m_compStream.buf.size() << std::endl;
+//     }
+std::cout << buffer << std::endl;
 
-        size_t originalSize = buffer.size() * m_context.pointSize();
-        size_t newSize = m_compStream.buf.size();
-        double percent = (double) newSize/(double) originalSize;
-        percent = percent * 100;
+    size_t outbufSize = m_pointSize * buffer.size();
+    std::unique_ptr<char> outbuf(new char[outbufSize]);
+    char *pos = outbuf.get();
 
-        log()->get(LogLevel::Debug3) << "Compressing tile by " << boost::str(boost::format("%.2f") % (100- percent))<<"%" << std::endl;
-    }
-    else
+    for (PointId id = 0; id < buffer.size(); ++id)
     {
-        m_compStream.buf = buffer.getBytes();
+        auto ti = m_types.begin();
+        for (auto di = m_dims.begin(); di != m_dims.end(); ++di, ++ti)
+        {
+            fillBuf(buffer, pos, *di, *ti, id);
+            pos += Dimension::size(*ti);
+        }
+        if (id % 100 == 0)
+            m_callback->invoke(id);
     }
 
     records rs;
