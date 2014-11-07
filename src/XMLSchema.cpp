@@ -33,8 +33,10 @@
 
 #include <pdal/XMLSchema.hpp>
 #include <pdal/PipelineWriter.hpp>
+#include <pdal/PDALUtils.hpp>
 
 #include <sstream>
+#include <iostream>
 #include <iostream>
 #include <list>
 #include <cstdlib>
@@ -366,25 +368,25 @@ Reader::~Reader()
 }
 
 
-static void
-print_element_names(xmlNode * a_node)
-{
-#ifdef PDAL_HAVE_LIBXML2
+// static void
+// print_element_names(xmlNode * a_node)
+// {
+// #ifdef PDAL_HAVE_LIBXML2
+// //
+//     xmlNode *cur_node = NULL;
+// //
+//     for (cur_node = a_node; cur_node; cur_node = cur_node->next)
+//     {
+//         if (cur_node->type == XML_ELEMENT_NODE)
+//         {
+//             printf("node type: Element, name: %s\n", cur_node->name);
+//         }
+// //
+//         print_element_names(cur_node->children);
+//     }
+// #endif
+// }
 //
-    xmlNode *cur_node = NULL;
-//
-    for (cur_node = a_node; cur_node; cur_node = cur_node->next)
-    {
-        if (cur_node->type == XML_ELEMENT_NODE)
-        {
-            printf("node type: Element, name: %s\n", cur_node->name);
-        }
-//
-        print_element_names(cur_node->children);
-    }
-#endif
-}
-
 std::string Reader::remapOldNames(std::string const& input)
 {
     if (boost::iequals(input, "Unnamed field 512") || boost::iequals(input, "Chipper Point ID"))
@@ -397,79 +399,47 @@ std::string Reader::remapOldNames(std::string const& input)
 }
 
 #ifdef PDAL_HAVE_LIBXML2
-pdal::MetadataNode Reader::LoadMetadata(xmlNode* startNode)
+MetadataNode Reader::LoadMetadata(xmlNode* startNode, MetadataNode& input)
 {
-
-    pdal::MetadataNode output;
+//     Expect metadata in the following form
+//     We are going to skipp the root element because we are
+//     expecting to be given one with our input
+//     <pc:metadata>
+//         <Metadata name="root" type="">
+//             <Metadata name="compression" type="string">lazperf</Metadata>
+//             <Metadata name="version" type="string">1.0</Metadata>
+//         </Metadata>
+//     </pc:metadata>
 
 
     xmlNode* node = startNode;
-
-print_element_names(node);
-
-//     xmlchar* name = xmlgetprop(node, (const xmlchar*) "name");
-//     xmlchar* etype = xmlgetprop(node, (const xmlchar*) "type");
-// print_element_names(node);
-//      std::cout << "node name: " << (const char*)node->name << std::endl;
-// //          std::cout << "prop type: " << (const char*) etype << std::endl;
-    if (boost::equals((const char*)node->name, "metadata")) // skip the first one
+    for (node = startNode; node; node=node->next)
     {
-        node = node->next;
-    }
-
-    xmlChar* name = xmlGetProp(node, (const xmlChar*) "name");
-    xmlChar* etype = xmlGetProp(node, (const xmlChar*) "type");
-     std::cout << "node name: " << (const char*)node->name << std::endl;
-//          std::cout << "prop type: " << (const char*) etype << std::endl;
-    pdal::MetadataNode m((const char*) node->name);
-    if (!etype && boost::iequals((const char*) node->name, "root"))
-    {
-        if (node->children)
-            output.add(LoadMetadata(node->children));
-    }
-//     if (boost::iequals((const char*)etype, "blank"))
-//     {
-//         // blank denotes a new Metadata instance.
-//         if (node->children)
-//             output.add(LoadMetadata(node->children));
-//     }
-
-
-    while (node != NULL)
-    {
-
-             std::cout << "node loop name: " << (const char*)node->name << std::endl;
-
-        if (node->properties)
-        {
-           xmlChar* name = xmlGetProp(node, (const xmlChar *)"name");
-           xmlChar* etype = xmlGetProp(node, (const xmlChar *)"type");
-//             std::cout << "property name: " << (const char*)name << std::endl;
-//              std::cout << "proper type: " << (const char*)etype << std::endl;
-
-        }
-
-        const char* description = (const char*)xmlGetProp(node, (const xmlChar*)"description");
-
-        const char* text = (const char*) xmlNodeGetContent(node);
-//          m.addOrUpdate((const char*) node->name, text, description);
-//          if (boost::iequals((const char*)etype, "root"))
-//          {
-//              // blank denotes a new Metadata instance.
-//              m.add(LoadMetadata(node));
-//          }
-
-
-         output.add(m);
-
         if (node->type == XML_ELEMENT_NODE)
         {
-            node = node->children;
+            if (boost::equals((const char*)node->name, "Metadata"))
+            {
+                const char* fieldname = (const char*) xmlGetProp(node, (const xmlChar*) "name");
+                const char* etype = (const char*) xmlGetProp(node, (const xmlChar*) "type");
+                const char* description = (const char*)  xmlGetProp(node, (const xmlChar*) "description");
+                const char* text = (const char*) xmlNodeGetContent(node);
+
+                if (!boost::iequals(fieldname, "root"))
+                {
+                    if (!fieldname)
+                    {
+                        std::ostringstream oss;
+                        oss << "Unable to read metadata for node '" << (const char*)node->name<<"' no \"name\" was given";
+                        throw pdal_error(oss.str());
+                    }
+                    input.add(fieldname, text ? text : "", description ? description : "");
+                }
+            }
+            LoadMetadata(node->children, input);
         }
-        else
-            node = node->next;
     }
-    return output;
+
+    return input;
 }
 #endif
 
@@ -510,15 +480,11 @@ void Reader::Load()
             continue;
         }
 
-        // printf("node name: %s\n", (const char*)dimension->name);
         if (boost::equals((const char*)dimension->name, "metadata"))
         {
-            printf("metadata node name: %s\n", (const char*)dimension->name);
+            m_metadata = MetadataNode("root");
+            m_metadata = LoadMetadata(dimension, m_metadata);
 
-
-//             metadata.addMetadata(LoadMetadata(dimension));
-            MetadataNode m = metadata.getNode();
-            m.add( LoadMetadata(dimension));
             dimension = dimension->next;
             continue;
         }
