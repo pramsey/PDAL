@@ -132,8 +132,6 @@ public:
 
     void decompress()
         {
-
-            std::cout << "comp bytes: " << m_compStream.buf.size() << " count: " << count <<std::endl;
             PointBufferPtr b = compression::Decompress(m_ctx, m_compStream, count);
             m_compStream.buf = b->getBytes();
         }

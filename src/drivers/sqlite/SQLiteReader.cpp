@@ -208,9 +208,9 @@ void SQLiteReader::addDimensions(PointContextRef ctx)
     m_patch->m_schema = reader.schema();
     m_patch->m_ctx = ctx;
 
-//     ctx.registerDim(Dimension::Id::X);
-//     ctx.registerDim(Dimension::Id::Y);
-//     ctx.registerDim(Dimension::Id::Z);
+    ctx.registerDim(Dimension::Id::X);
+    ctx.registerDim(Dimension::Id::Y);
+    ctx.registerDim(Dimension::Id::Z);
 
     schema::DimInfoList& dims = m_patch->m_schema.m_dims;
     for (auto di = dims.begin(); di != dims.end(); ++di)
@@ -248,34 +248,33 @@ point_count_t SQLiteReader::readPatch(PointBuffer& buffer, point_count_t numPts)
 
     // Availability of positions already validated
     int32_t position = columns.find("POINTS")->second;
-    log()->get(LogLevel::Debug3) << "Bytes position: " <<  position << std::endl;
 
     MetadataNode comp = m_patch->m_metadata.findChild("compression");
     m_patch->m_isCompressed = boost::iequals(comp.value(), "lazperf");
     m_patch->m_compVersion = m_patch->m_metadata.findChild("version").value();
 
     position = columns.find("NUM_POINTS")->second;
-    log()->get(LogLevel::Debug3) << "Bytes position: " <<  position << std::endl;
     int32_t count = boost::lexical_cast<int32_t>((*r)[position].data);
     m_patch->remaining = count;
     m_patch->count = count;
 
 
-    log()->get(LogLevel::Debug3) << "patch compression? " << m_patch->m_isCompressed << std::endl;
-    log()->get(LogLevel::Debug3) << "patch compression version: " << m_patch->m_compVersion << std::endl;
+    log()->get(LogLevel::Debug3) << "patch compression? "
+                                 << m_patch->m_isCompressed << std::endl;
 
+    if (m_patch->m_isCompressed)
+        log()->get(LogLevel::Debug3) << "patch compression version: "
+                                     << m_patch->m_compVersion << std::endl;
 
     position = columns.find("POINTS")->second;
     const uint8_t* bytes(0);
 
-    std::vector <uint8_t> data;
     size_t size (0);
     if (m_patch->m_isCompressed)
     {
-        data = (*r)[position].blobBuf;
-        log()->get(LogLevel::Debug3) << "Compressed byte size: " <<  data.size() << std::endl;
-        m_patch->m_compStream.buf = data;
-        log()->get(LogLevel::Debug3) << "Compressed byte size: " << m_patch->m_compStream.buf.size() << std::endl;
+        m_patch->m_compStream.buf =  (*r)[position].blobBuf;
+        log()->get(LogLevel::Debug3) << "Compressed byte size: "
+                                     << m_patch->m_compStream.buf.size() << std::endl;
         m_patch->decompress();
         bytes = &(m_patch->m_compStream.buf[0]);
         size = m_patch->m_compStream.buf.size();
@@ -285,14 +284,14 @@ point_count_t SQLiteReader::readPatch(PointBuffer& buffer, point_count_t numPts)
 
     } else
     {
-        data = (*r)[position].blobBuf;
-        bytes = &(data[0]);
+        bytes = &((*r)[position].blobBuf[0]);
         size = (*r)[position].blobLen;
-        assert(data.size () == size);
     }
 
-    log()->get(LogLevel::Debug4) << "fetched patch with " << count <<
-        " points and " <<  data.size() << " bytes bytesize: " << size << std::endl;
+    log()->get(LogLevel::Debug4) << "fetched patch with "
+                                 << count << " points and "
+                                 << m_patch->m_compStream.buf.size()
+                                 << " bytes size: " << size << std::endl;
 
 
     point_count_t numRemaining = m_patch->remaining;
@@ -300,7 +299,6 @@ point_count_t SQLiteReader::readPatch(PointBuffer& buffer, point_count_t numPts)
     point_count_t numRead = 0;
 
     size_t offset = ((m_patch->count - m_patch->remaining) * m_point_size);
-    log()->get(LogLevel::Debug3) << "offset: " << offset << std::endl;
     uint8_t const* pos = bytes + offset;
 
     schema::DimInfoList& dims = m_patch->m_schema.m_dims;
@@ -314,17 +312,17 @@ point_count_t SQLiteReader::readPatch(PointBuffer& buffer, point_count_t numPts)
         }
 
         // Scale X, Y and Z
-        // double v = buffer.getFieldAs<double>(Dimension::Id::X, nextId);
-        // v = v * m_patch->xScale() + m_patch->xOffset();
-        // buffer.setField(Dimension::Id::X, nextId, v);
-        //
-        // v = buffer.getFieldAs<double>(Dimension::Id::Y, nextId);
-        // v = v * m_patch->yScale() + m_patch->yOffset();
-        // buffer.setField(Dimension::Id::Y, nextId, v);
-        //
-        // v = buffer.getFieldAs<double>(Dimension::Id::Z, nextId);
-        // v = v * m_patch->zScale() + m_patch->zOffset();
-        // buffer.setField(Dimension::Id::Z, nextId, v);
+        double v = buffer.getFieldAs<double>(Dimension::Id::X, nextId);
+        v = v * m_patch->xScale() + m_patch->xOffset();
+        buffer.setField(Dimension::Id::X, nextId, v);
+
+        v = buffer.getFieldAs<double>(Dimension::Id::Y, nextId);
+        v = v * m_patch->yScale() + m_patch->yOffset();
+        buffer.setField(Dimension::Id::Y, nextId, v);
+
+        v = buffer.getFieldAs<double>(Dimension::Id::Z, nextId);
+        v = v * m_patch->zScale() + m_patch->zOffset();
+        buffer.setField(Dimension::Id::Z, nextId, v);
 
         numRemaining--;
         nextId++;
