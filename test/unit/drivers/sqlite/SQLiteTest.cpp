@@ -160,8 +160,8 @@ BOOST_AUTO_TEST_CASE(SqliteTest_test_simple_las)
     Options sqliteOptions = getSQLITEOptions();
 
 #ifdef PDAL_HAVE_LAZPERF
-    Option compression("compression", true, "");
-    sqliteOptions.add(compression);
+//     Option compression("compression", true, "");
+//     sqliteOptions.add(compression);
 #endif
 
     {
