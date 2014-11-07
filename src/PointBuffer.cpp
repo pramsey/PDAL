@@ -141,7 +141,7 @@ void PointBuffer::dump(std::ostream& ostr) const
             case Dimension::Type::Double:
                 ostr << getFieldInternal<double>(d, idx);
             default:
-                throw;
+                throw pdal_error("unable to dump unknonwn type");
             }
             ostr << endl;
         }
