@@ -511,66 +511,6 @@ void SQLiteWriter::CreateCloud()
 }
 
 
-namespace
-{
-
-void fillBuf(const PointBuffer& buf, char *pos, Dimension::Id::Enum d,
-    Dimension::Type::Enum type, PointId id)
-{
-    union
-    {
-        float f;
-        double d;
-        int8_t s8;
-        int16_t s16;
-        int32_t s32;
-        int64_t s64;
-        uint8_t u8;
-        uint16_t u16;
-        uint32_t u32;
-        uint64_t u64;
-    } e;  // e - for Everything.
-
-    switch (type)
-    {
-    case Dimension::Type::Float:
-        e.f = buf.getFieldAs<float>(d, id);
-        break;
-    case Dimension::Type::Double:
-        e.d = buf.getFieldAs<double>(d, id);
-        break;
-    case Dimension::Type::Signed8:
-        e.s8 = buf.getFieldAs<int8_t>(d, id);
-        break;
-    case Dimension::Type::Signed16:
-        e.s16 = buf.getFieldAs<int16_t>(d, id);
-        break;
-    case Dimension::Type::Signed32:
-        e.s32 = buf.getFieldAs<int32_t>(d, id);
-        break;
-    case Dimension::Type::Signed64:
-        e.s64 = buf.getFieldAs<int64_t>(d, id);
-        break;
-    case Dimension::Type::Unsigned8:
-        e.u8 = buf.getFieldAs<uint8_t>(d, id);
-        break;
-    case Dimension::Type::Unsigned16:
-        e.u16 = buf.getFieldAs<uint16_t>(d, id);
-        break;
-    case Dimension::Type::Unsigned32:
-        e.u32 = buf.getFieldAs<uint32_t>(d, id);
-        break;
-    case Dimension::Type::Unsigned64:
-        e.u64 = buf.getFieldAs<uint64_t>(d, id);
-        break;
-    case Dimension::Type::None:
-        break;
-    }
-    memcpy(pos, &e, Dimension::size(type));
-}
-
-} // anonymous namespace.
-
 void SQLiteWriter::writeTile(PointBuffer const& buffer)
 {
     using namespace std;
@@ -582,50 +522,20 @@ void SQLiteWriter::writeTile(PointBuffer const& buffer)
     if (m_doCompression)
     {
         compression::Compress(m_context, buffer, m_compStream);
-//
         size_t originalSize = buffer.size() * m_context.pointSize();
         size_t newSize = m_compStream.buf.size();
         double percent = (double) newSize/(double) originalSize;
         percent = percent * 100;
-//
-        log()->get(LogLevel::Debug3) << "Compressing tile by " << boost::str(boost::format("%.2f") % (100- percent))<<"%" << std::endl;
+        log()->get(LogLevel::Debug3) << "Compressing tile by "
+                                     << boost::str(boost::format("%.2f") % (100- percent))
+                                     <<"%" << std::endl;
     }
     else
     {
-//         m_compStream.buf.resize(buffer.size() * m_context.pointSize());
-//         char *pos = (char*)&(m_compStream.buf[0]);
-//       for (PointId id = 0; id < buffer.size(); ++id)
-//         {
-//             auto ti = m_types.begin();
-//             for (auto di = m_dims.begin(); di != m_dims.end(); ++di, ++ti)
-//             {
-//                 fillBuf(buffer, pos, *di, *ti, id);
-//                 pos += Dimension::size(*ti);
-//             }
-//             if (id % 100 == 0)
-//                 m_callback->invoke(id);
-//         }
         m_compStream.buf = buffer.getBytes();
         log()->get(LogLevel::Debug3) << "uncompressed size: " << m_compStream.buf.size() << std::endl;
     }
-// std::cout << buffer << std::endl;
 
-//     size_t outbufSize = m_pointSize * buffer.size();
-//     std::unique_ptr<char> outbuf(new char[outbufSize]);
-//     char *pos = outbuf.get();
-//
-//     for (PointId id = 0; id < buffer.size(); ++id)
-//     {
-//         auto ti = m_types.begin();
-//         for (auto di = m_dims.begin(); di != m_dims.end(); ++di, ++ti)
-//         {
-//             fillBuf(buffer, pos, *di, *ti, id);
-//             pos += Dimension::size(*ti);
-//         }
-//         if (id % 100 == 0)
-//             m_callback->invoke(id);
-//     }
-//
     records rs;
     row r;
 
