@@ -130,12 +130,25 @@ public:
     bool m_isCompressed;
     std::string m_compVersion;
 
+    void setBytes(const std::vector<uint8_t>& data)
+        {
+            m_compStream.buf = data;
+        }
+
+    const std::vector<uint8_t>& getBytes() const
+        {
+            return m_compStream.buf;
+        }
     void decompress()
         {
             PointBufferPtr b = compression::Decompress(m_ctx, m_compStream, count);
             m_compStream.buf = b->getBytes();
         }
 
+    void compress(const PointBuffer& buffer)
+        {
+            compression::Compress(m_ctx, buffer, m_compStream);
+        }
     size_t byte_size()
         { return m_compStream.buf.size(); }
 

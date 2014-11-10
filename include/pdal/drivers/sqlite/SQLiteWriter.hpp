@@ -106,7 +106,7 @@ private:
     std::string m_modulename;
     bool m_is3d;
     bool m_doCompression;;
-    compression::CompressionStream m_compStream;
+    PatchPtr m_patch;
     PointContextRef m_context;
 
 };

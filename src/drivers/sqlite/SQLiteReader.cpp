@@ -272,12 +272,12 @@ point_count_t SQLiteReader::readPatch(PointBuffer& buffer, point_count_t numPts)
     size_t size (0);
     if (m_patch->m_isCompressed)
     {
-        m_patch->m_compStream.buf =  (*r)[position].blobBuf;
+        m_patch->setBytes((*r)[position].blobBuf);
         log()->get(LogLevel::Debug3) << "Compressed byte size: "
-                                     << m_patch->m_compStream.buf.size() << std::endl;
+                                     << m_patch->getBytes().size() << std::endl;
         m_patch->decompress();
         bytes = &(m_patch->m_compStream.buf[0]);
-        size = m_patch->m_compStream.buf.size();
+        size = m_patch->getBytes().size();
         if (!size)
             throw pdal_error("Compressed patch size was 0!");
         log()->get(LogLevel::Debug3) << "Uncompressed byte size: " << size << std::endl;
@@ -290,7 +290,7 @@ point_count_t SQLiteReader::readPatch(PointBuffer& buffer, point_count_t numPts)
 
     log()->get(LogLevel::Debug4) << "fetched patch with "
                                  << count << " points and "
-                                 << m_patch->m_compStream.buf.size()
+                                 << m_patch->getBytes().size()
                                  << " bytes size: " << size << std::endl;
 
 

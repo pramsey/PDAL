@@ -127,6 +127,8 @@ void SQLiteWriter::initialize()
         oss << "Unable to connect to database with error '" << e.what() << "'";
         throw pdal_error(oss.str());
     }
+
+    m_patch = PatchPtr(new Patch());
 }
 
 void SQLiteWriter::ready(PointContextRef ctx)
@@ -143,6 +145,7 @@ void SQLiteWriter::ready(PointContextRef ctx)
         m_types.push_back(type);
         m_pointSize += Dimension::size(type);
     }
+    m_patch->m_ctx = ctx;
 }
 
 void SQLiteWriter::write(const PointBuffer& buffer)
@@ -521,9 +524,10 @@ void SQLiteWriter::writeTile(PointBuffer const& buffer)
 
     if (m_doCompression)
     {
-        compression::Compress(m_context, buffer, m_compStream);
+        m_patch->compress(buffer);
+
         size_t originalSize = buffer.size() * m_context.pointSize();
-        size_t newSize = m_compStream.buf.size();
+        size_t newSize = m_patch->getBytes().size();
         double percent = (double) newSize/(double) originalSize;
         percent = percent * 100;
         log()->get(LogLevel::Debug3) << "Compressing tile by "
@@ -532,8 +536,8 @@ void SQLiteWriter::writeTile(PointBuffer const& buffer)
     }
     else
     {
-        m_compStream.buf = buffer.getBytes();
-        log()->get(LogLevel::Debug3) << "uncompressed size: " << m_compStream.buf.size() << std::endl;
+        m_patch->setBytes(buffer.getBytes());
+        log()->get(LogLevel::Debug3) << "uncompressed size: " << m_patch->getBytes().size() << std::endl;
     }
 
     records rs;
@@ -550,7 +554,7 @@ void SQLiteWriter::writeTile(PointBuffer const& buffer)
     r.push_back(column(m_obj_id));
     r.push_back(column(m_block_id));
     r.push_back(column(buffer.size()));
-    r.push_back(blob((const char*)(&m_compStream.buf[0]), m_compStream.buf.size()));
+    r.push_back(blob((const char*)(&m_patch->getBytes()[0]), m_patch->getBytes().size()));
     r.push_back(column(bounds));
     r.push_back(column(m_srid));
     r.push_back(column(box));
