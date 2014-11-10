@@ -116,7 +116,7 @@ typedef std::vector<row> records;
 class Patch
 {
 public:
-    Patch() : count(0), remaining(0), m_isCompressed(false), m_compVersion("")
+    Patch() : count(0), remaining(0), m_isCompressed(false), m_compVersion(""), idx(0)
     {
     };
 
@@ -126,31 +126,53 @@ public:
     pdal::schema::XMLSchema m_schema;
     PointContextRef m_ctx;
     MetadataNode m_metadata;
-    compression::CompressionStream m_compStream;
+//     compression::CompressionStream m_compStream;
     bool m_isCompressed;
     std::string m_compVersion;
+    std::vector<unsigned char> buf;
+    size_t idx;
+
+    void putBytes(const unsigned char* b, size_t len) {
+        while(len --) {
+            buf.push_back(*b++);
+        }
+    }
+
+    void putByte(const unsigned char b) {
+        buf.push_back(b);
+    }
+
+    unsigned char getByte() {
+        return buf[idx++];
+    }
+
+    void getBytes(unsigned char *b, int len) {
+        for (int i = 0 ; i < len ; i ++) {
+            b[i] = getByte();
+        }
+    }
 
     void setBytes(const std::vector<uint8_t>& data)
         {
-            m_compStream.buf = data;
+            buf = data;
         }
 
     const std::vector<uint8_t>& getBytes() const
         {
-            return m_compStream.buf;
+            return buf;
         }
     void decompress()
         {
-            PointBufferPtr b = compression::Decompress(m_ctx, m_compStream, count);
-            m_compStream.buf = b->getBytes();
+            PointBufferPtr b = compression::Decompress<Patch>(m_ctx, *this, count, compression::CompressionType::Lazperf);
+            buf = b->getBytes();
         }
 
-    void compress(const PointBuffer& buffer)
+    inline void compress(const PointBuffer& buffer)
         {
-            compression::Compress(m_ctx, buffer, m_compStream);
+            compression::Compress<Patch>(m_ctx, buffer, *this, compression::CompressionType::Lazperf, 0, 0);
         }
     size_t byte_size()
-        { return m_compStream.buf.size(); }
+        { return buf.size(); }
 
     double xOffset() const
         { return m_schema.m_scale.m_x.m_offset; }

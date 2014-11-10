@@ -46,6 +46,33 @@
 #include <pdal/PDALUtils.hpp>
 #include <pdal/Compression.hpp>
 
+struct SQLiteTestStream {
+    SQLiteTestStream() : buf(), idx(0) {}
+
+    void putBytes(const unsigned char* b, size_t len) {
+        while(len --) {
+            buf.push_back(*b++);
+        }
+    }
+
+    void putByte(const unsigned char b) {
+        buf.push_back(b);
+    }
+
+    unsigned char getByte() {
+        return buf[idx++];
+    }
+
+    void getBytes(unsigned char *b, int len) {
+        for (int i = 0 ; i < len ; i ++) {
+            b[i] = getByte();
+        }
+    }
+
+    std::vector<unsigned char> buf;
+    size_t idx;
+};
+
 BOOST_AUTO_TEST_SUITE(CompressionTest)
 
 
@@ -69,14 +96,14 @@ BOOST_AUTO_TEST_CASE(test_compress)
     PointBufferPtr buffer = *buffers.begin();
 
     BOOST_CHECK_EQUAL(ctx.pointSize(), 52);
-    compression::CompressionStream s;
-    compression::Compress(ctx, *buffer, s);
+    SQLiteTestStream s;
+    compression::Compress<SQLiteTestStream>(ctx, *buffer, s, compression::CompressionType::Lazperf, 0, 0);
     BOOST_CHECK_EQUAL(buffer->getBytes().size(), 55380);
     BOOST_CHECK_EQUAL(s.buf.size(), 31889);
 
-    compression::CompressionStream s2;
+    SQLiteTestStream s2;
     s2.buf = s.buf;
-    PointBufferPtr b = compression::Decompress(ctx, s2, 1000);
+    PointBufferPtr b = compression::Decompress<SQLiteTestStream>(ctx, s2, 1000, compression::CompressionType::Lazperf);
 
     BOOST_CHECK_EQUAL(b->size(), 1000);
     BOOST_CHECK_EQUAL(b->getBytes().size(), 52000);

@@ -276,7 +276,7 @@ point_count_t SQLiteReader::readPatch(PointBuffer& buffer, point_count_t numPts)
         log()->get(LogLevel::Debug3) << "Compressed byte size: "
                                      << m_patch->getBytes().size() << std::endl;
         m_patch->decompress();
-        bytes = &(m_patch->m_compStream.buf[0]);
+        bytes = &(m_patch->getBytes()[0]);
         size = m_patch->getBytes().size();
         if (!size)
             throw pdal_error("Compressed patch size was 0!");

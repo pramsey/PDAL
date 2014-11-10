@@ -79,10 +79,6 @@ if (PDAL_HAVE_LIBXML2)
   SET (PDAL_XML_SRC XMLSchema.cpp)
 endif()
 
-if (PDAL_HAVE_LAZPERF)
-    SET(PDAL_LAZPERF_SRC Compression.cpp)
-endif()
-
 set(PDAL_BASE_CPP
   Bounds.cpp
   Charbuf.cpp
