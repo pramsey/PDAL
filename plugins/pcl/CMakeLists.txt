@@ -53,6 +53,7 @@ if(PCL_FOUND)
 
 	set(PCLVIZ_LIB_NAME pdal_plugin_writer_pclvisualizer)
 	PDAL_ADD_PLUGIN(${PCLVIZ_LIB_NAME} writer pclvisualizer ${srcs} ${incs})
+    target_link_libraries(${PCLVIZ_LIB_NAME} ${PDAL_LINKAGE} ${PCL_LIBRARIES})
     else()
         message(STATUS "..building without PCL Visualization")
     endif()
