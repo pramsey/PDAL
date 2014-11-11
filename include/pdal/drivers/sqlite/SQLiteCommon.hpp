@@ -169,7 +169,7 @@ public:
 
     inline void compress(const PointBuffer& buffer)
         {
-            compression::Compress<Patch>(m_ctx, buffer, *this, compression::CompressionType::Lazperf, 0, 0);
+            compression::Compress<Patch>(m_ctx, buffer, *this, compression::CompressionType::Lazperf, 0, buffer.size());
         }
     size_t byte_size()
         { return buf.size(); }

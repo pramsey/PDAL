@@ -95,6 +95,7 @@ template <typename CompressionStream> inline void Compress(PointContextRef ctx,
     const Dimension::IdList& dims = ctx.dims();
     for (auto di = dims.begin(); di != dims.end(); ++di)
     {
+        std::cout << "compressing: : " << Dimension::name(*di) << std::endl;
         Dimension::Type::Enum t = ctx.dimType(*di);
         size_t s = ctx.dimSize(*di);
         if (t == Dimension::Type::Signed32)
@@ -207,7 +208,7 @@ template <typename CompressionStream> inline PointBufferPtr Decompress(PointCont
 
     typedef decoders::arithmetic<CompressionStream> DecoderType;
 
-    strm.buf.resize(howMany * ctx.pointSize());
+//     strm.buf.resize(howMany * ctx.pointSize());
     DecoderType decoder(strm);
     auto decompressor = make_dynamic_decompressor(decoder);
     const Dimension::IdList& dims = ctx.dims();
@@ -304,16 +305,21 @@ template <typename CompressionStream> inline PointBufferPtr Decompress(PointCont
     }
 
 
-    uint8_t* pos = &(strm.buf[0]);
+//     uint8_t* pos = &(strm.buf.front());
+    std::vector<uint8_t> output;
+    output.resize(howMany * ctx.pointSize());
+    uint8_t* pos = &(output[0]);
+    size_t point_size = ctx.pointSize();
     PointId i(0);
-    while (i != howMany)
+    uint8_t* end_pos = pos + (point_size * howMany);
+    while (pos != end_pos)
     {
         decompressor->decompress((char*)pos);
-        pos += ctx.pointSize();
-        i ++;
+        pos+=point_size;
     }
 
-    PointBufferPtr b = PointBufferPtr(new PointBuffer(strm.buf, ctx));
+    PointBufferPtr b = PointBufferPtr(new PointBuffer(output, ctx));
+//     std::cout << *b << std::endl;
 
     return b;
 
