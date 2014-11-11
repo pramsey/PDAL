@@ -220,7 +220,25 @@ public:
     Dimension::IdList dims() const
         { return m_context.dims(); }
 
-    std::vector<uint8_t> getBytes(PointId start=0, PointId end=0) const
+    std::ostream& getBytes(std::ostream& strm, PointId start, PointId end) const
+    {
+        char buf[sizeof(double)];
+        for (PointId i = start; i < end; ++i)
+        {
+            for (const auto& dim : m_context.m_dims->m_used)
+            {
+                getFieldInternal(dim, i, buf);
+                strm.write(buf, m_context.dimSize(dim));
+            }
+        }
+        return strm;
+    }
+    std::vector<uint8_t> getBytes() const
+    {
+        return getBytes(0, size());
+    }
+
+    std::vector<uint8_t> getBytes(PointId start, PointId end) const
     {
         std::vector<uint8_t> output;
 

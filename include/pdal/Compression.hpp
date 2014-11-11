@@ -153,8 +153,8 @@ template <typename CompressionStream> inline void Compress(PointContextRef ctx,
         {
             if (s == 8)
             {
-                compressor->template add_field<int>();
-                compressor->template add_field<int>();
+                compressor->template add_field<unsigned int>();
+                compressor->template add_field<unsigned int>();
             }
             else
                 throw pdal_error("Dimension is type Unsigned64 but size != 8!");
@@ -272,8 +272,8 @@ template <typename CompressionStream> inline PointBufferPtr Decompress(PointCont
         {
             if (s == 8)
             {
-                decompressor->template add_field<int>();
-                decompressor->template add_field<int>();
+                decompressor->template add_field<unsigned int>();
+                decompressor->template add_field<unsigned int>();
             }
 
             else
@@ -319,47 +319,6 @@ template <typename CompressionStream> inline PointBufferPtr Decompress(PointCont
 
 
 }
-
-
-//
-// struct CompressionStream {
-//     CompressionStream() : buf(), idx(0) {}
-//
-//     void putBytes(const unsigned char* b, size_t len) {
-//         while(len --) {
-//             buf.push_back(*b++);
-//         }
-//     }
-//
-//     void putByte(const unsigned char b) {
-//         buf.push_back(b);
-//     }
-//
-//     unsigned char getByte() {
-//         return buf[idx++];
-//     }
-//
-//     void getBytes(unsigned char *b, int len) {
-//         for (int i = 0 ; i < len ; i ++) {
-//             b[i] = getByte();
-//         }
-//     }
-//
-//     std::vector<unsigned char> buf;
-//     size_t idx;
-// };
-//
-
-//     template <typename CompressionStream> void Compress(PointContextRef ctx,
-//                                                         const PointBuffer& buffer,
-//                                                         CompressionStream& output,
-//                                                         CompressionType::Enum c=CompressionType::Lazperf,
-//                                                         PointId start=0,
-//                                                         PointId end=0);
-//     template <typename CompressionStream> PointBufferPtr Decompress(PointContextRef ctx,
-//                                                                     CompressionStream& s,
-//                                                                     size_t howMany,
-//                                                                     CompressionType::Enum c=CompressionType::Lazperf);
 
 } // compression
 } // namespace pdal

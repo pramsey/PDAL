@@ -34,6 +34,7 @@
 
 #include <pdal/drivers/sqlite/SQLiteWriter.hpp>
 #include <pdal/PointBuffer.hpp>
+#include <pdal/Charbuf.hpp>
 #include <pdal/StageFactory.hpp>
 #include <pdal/pdal_internal.hpp>
 #include <pdal/FileUtils.hpp>
@@ -522,13 +523,14 @@ void SQLiteWriter::writeTile(PointBuffer const& buffer)
     boost::uint32_t point_data_length(0);
     boost::uint32_t schema_byte_size(0);
 
+    size_t bufferSize = buffer.size() * m_context.pointSize();
+
     if (m_doCompression)
     {
         m_patch->compress(buffer);
 
-        size_t originalSize = buffer.size() * m_context.pointSize();
         size_t newSize = m_patch->getBytes().size();
-        double percent = (double) newSize/(double) originalSize;
+        double percent = (double) newSize/(double) bufferSize;
         percent = percent * 100;
         log()->get(LogLevel::Debug3) << "Compressing tile by "
                                      << boost::str(boost::format("%.2f") % (100- percent))
@@ -536,7 +538,14 @@ void SQLiteWriter::writeTile(PointBuffer const& buffer)
     }
     else
     {
-        m_patch->setBytes(buffer.getBytes());
+        std::vector<uint8_t> bytes;
+        bytes.resize(bufferSize);
+        Charbuf charstreambuf((char*)&bytes[0], bufferSize, 0);
+        std::ostream o(&charstreambuf);
+        buffer.getBytes(o, 0, buffer.size());
+
+        log()->get(LogLevel::Debug3) << "uncompressed size: " << bytes.size() << std::endl;
+        m_patch->setBytes(bytes);
         log()->get(LogLevel::Debug3) << "uncompressed size: " << m_patch->getBytes().size() << std::endl;
     }
 
