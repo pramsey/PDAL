@@ -6,8 +6,10 @@
 cmake_minimum_required(VERSION 2.8.6)
 
 project(PDAL)
-string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
-set(PROJECT_CMAKE_DIR "${PROJECT_SOURCE_DIR}/cmake")
+
+set(ROOT_DIR "${PROJECT_SOURCE_DIR}")
+#include(${ROOT_DIR}/cmake/common.cmake NO_POLICY_SCOPE)
+include(${ROOT_DIR}/cmake/common.cmake)
 
 #------------------------------------------------------------------------------
 # internal cmake settings
@@ -17,14 +19,6 @@ set(CMAKE_COLOR_MAKEFILE ON)
 
 # Allow advanced users to generate Makefiles printing detailed commands
 mark_as_advanced(CMAKE_VERBOSE_MAKEFILE)
-
-# Path to additional CMake modules
-set(CMAKE_MODULE_PATH "${PROJECT_CMAKE_DIR}/modules" ${CMAKE_MODULE_PATH})
-
-if (CMAKE_MAJOR_VERSION GREATER 2)
-cmake_policy(SET CMP0022 OLD) # interface link libraries
-cmake_policy(SET CMP0042 OLD) # osx rpath
-endif()
 
 # per http://www.cmake.org/Wiki/CMake_RPATH_handling
 SET(CMAKE_SKIP_BUILD_RPATH FALSE)
@@ -36,16 +30,13 @@ IF("${isSystemDir}" STREQUAL "-1")
     SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 ENDIF("${isSystemDir}" STREQUAL "-1")
 
-# Get CMAKE_DEPENDENT_OPTION macro
-include(CMakeDependentOption)
-
 #------------------------------------------------------------------------------
+
 # PDAL general settings
 #------------------------------------------------------------------------------
 
-include("${PROJECT_CMAKE_DIR}/pdal_options.cmake")
-include("${PROJECT_CMAKE_DIR}/pdal_targets.cmake")
-include("${PROJECT_CMAKE_DIR}/pdal_utils.cmake")
+include("${PDAL_CMAKE_DIR}/pdal_options.cmake")
+include("${PDAL_CMAKE_DIR}/pdal_utils.cmake")
 
 # the next line is the ONLY place in the entire pdal system where
 # the version info is hard-coded
@@ -147,8 +138,6 @@ set(PDAL_BUILD_TYPE ${CMAKE_BUILD_TYPE})
 # Platform and compiler specific settings
 #------------------------------------------------------------------------------
 
-include ("${PROJECT_CMAKE_DIR}/compiler_options.cmake")
-
 #ABELL - Think this is magic now.
 #if (APPLE)
 #    set(SO_EXT dylib)
@@ -159,360 +148,24 @@ include ("${PROJECT_CMAKE_DIR}/compiler_options.cmake")
 #    set(SO_EXT so)
 #endif(APPLE)
 
-#------------------------------------------------------------------------------
-# settings for Boost dependencies
-#------------------------------------------------------------------------------
-
 find_package(Threads)
 
-# Default to using static, multithreaded libraries for
-# linking under MSVC.  This is because we show users how to
-# use boostpro.com installer and install those options when linking
-# on windows in the compilation documentation.
-if(WIN32)
-  if (MSVC)
-    set(Boost_USE_STATIC_LIBS   ON)
-    set(Boost_USE_MULTITHREADED ON)
-
-    if (PDAL_USE_STATIC_RUNTIME)
-      set(Boost_USE_STATIC_RUNTIME ON)
-    endif(PDAL_USE_STATIC_RUNTIME)
-  endif(MSVC)
-endif(WIN32)
-
-find_package(Boost 1.53 COMPONENTS program_options thread iostreams filesystem system unit_test_framework random REQUIRED)
-
-if(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-
-  # make these available for the user to set.
-  mark_as_advanced(CLEAR Boost_INCLUDE_DIR)
-  mark_as_advanced(CLEAR Boost_LIBRARY_DIRS)
-  link_directories(${Boost_LIBRARY_DIRS})
-
-endif(Boost_FOUND)
-
-#------------------------------------------------------------------------------
-# settings for GDAL & related dependencies
-#------------------------------------------------------------------------------
-
-#
-# GDAL/OGR support (required)
-#
-find_package(GDAL 1.9.0)
-if (GDAL_FOUND)
-    include_directories("${GDAL_INCLUDE_DIR}")
-    mark_as_advanced(CLEAR GDAL_INCLUDE_DIR)
-    mark_as_advanced(CLEAR GDAL_LIBRARY)
-    message(STATUS "...building with GDAL")
-else()
-    message(FATAL_ERROR "GDAL support is required")
-endif()
-
-
-#
-# GEOS (optional)
-#
-find_package(GEOS 3.3)
-if (GEOS_FOUND)
-    find_file(GEOS_VERSION_H version.h "${GEOS_INCLUDE_DIR}/geos")
-    if ("${GEOS_VERSION_H}" STREQUAL "GEOS_VERSION_H-NOTFOUND")
-        set(GEOS_LIBRARY "")   
-        set(GEOS_FOUND FALSE)
-        set(WITH_GEOS FALSE)
-    else()
-        include_directories("${GEOS_INCLUDE_DIR}")
-        set(PDAL_HAVE_GEOS 1)
-        message(STATUS "...building with GEOS")        
-    endif()
-else()
-    set(GEOS_LIBRARY "")
-endif()
-
-
-#
-# GeoTIFF support (optional)
-#
-option(WITH_GEOTIFF "Choose if GeoTIFF support should be built" TRUE)
-if(WITH_GEOTIFF)
-    find_package(GeoTIFF 1.3.0)
-    if(GEOTIFF_FOUND)
-        include_directories("${GEOTIFF_INCLUDE_DIR}")
-        set(PDAL_HAVE_LIBGEOTIFF 1)
-        mark_as_advanced(CLEAR TIFF_INCLUDE_DIR)
-        mark_as_advanced(CLEAR TIFF_LIBRARY)
-        if (WIN32)
-            set(TIFF_NAMES libtiff_i)
-        endif(WIN32)
-    else()
-        set(WITH_GEOTIFF FALSE)
-        set(GEOTIFF_LIBRARY "")
-    endif()
-endif()
-
-
-#
-# SQLite (optional)
-#
-option(WITH_SQLITE "Choose if sqlite database support should be built" FALSE)
-if (WITH_SQLITE)
-    find_package(SQLite3)
-    mark_as_advanced(CLEAR SQLITE3_INCLUDE_DIR)
-    mark_as_advanced(CLEAR SQLITE3_LIBRARY)
-    include_directories(${SQLITE3_INCLUDE_DIR})
-    set(PDAL_HAVE_SQLITE 1)
-endif()
-
-
-#
-# PGPointCloud (optional)
-#
-option(WITH_PGPOINTCLOUD "Choose if PostgreSQL PointCloud support should be built" TRUE)
-cmake_dependent_option(
-    WITH_PGPOINTCLOUD_TESTS
-    "Choose if PostgreSQL PointCloud tests should be built"
-    OFF
-    WITH_PGPOINTCLOUD
-    OFF
-    )
-if (WITH_PGPOINTCLOUD)
-    find_package(PostgreSQL)
-    if (POSTGRESQL_FOUND)
-        set(PDAL_HAVE_POSTGRESQL 1)
-        mark_as_advanced(CLEAR POSTGRESQL_INCLUDE_DIR)
-        mark_as_advanced(CLEAR POSTGRESQL_LIBRARIES)
-        include_directories(${POSTGRESQL_INCLUDE_DIR})
-        message(STATUS "..building with PgPointCloud")
-    else()
-        set(WITH_PGPOINTCLOUD FALSE)
-        set(POSTGRESQL_LIBRARIES "")
-    endif()
-endif()
-
-
-#
-# Nitro (optional)
-#
-option(WITH_NITRO "Choose if Nitro support (only install supported is from http://github.com/hobu/nitro)" TRUE)
-if(WITH_NITRO)
-    find_package(Nitro 2.6)
-    IF (NITRO_FOUND)
-        set(PDAL_HAVE_NITRO 1)
-        include_directories(${NITRO_INCLUDE_DIR})
-        include_directories("${NITRO_INCLUDE_DIR}/nitro/c++")
-        include_directories("${NITRO_INCLUDE_DIR}/nitro/c")
-        add_definitions("-D_REENTRANT")
-        if (WIN32)
-            add_definitions("-DSIZEOF_SIZE_T=4")
-            add_definitions("-DIMPORT_NITRO_API")
-        else()
-            add_definitions("-D__POSIX")
-        endif()
-        message(STATUS "...building with Nitro")
-    else()
-        set(WITH_NITRO FALSE)
-        set(NITRO_LIBRARIES "")
-    endif()
-endif()
-
-
-#
-# ICONV (optional)
-#
-# GDAL and libxml2 require iconv.  The library is supplied by OSGeo4W.
-#
-option(WITH_ICONV "Choose if IConv support should be built" TRUE)
-if(WITH_ICONV)
-    find_package(ICONV)
-    if (ICONV_FOUND)
-        mark_as_advanced(CLEAR ICONV_INCLUDE_DIR)
-        mark_as_advanced(CLEAR ICONV_LIBRARIES)
-        include_directories(${ICONV_INCLUDE_DIR})
-        set(PDAL_HAVE_ICONV 1)
-    endif()
-endif()
-
-
-#
-# Oracle support (optional)
-#
-option(WITH_ORACLE "Choose if Oracle support should be built" TRUE)
-if(WITH_ORACLE)
-    find_package(Oracle)
-    if(ORACLE_FOUND)
-        include_directories(${ORACLE_INCLUDE_DIR})
-        set(PDAL_HAVE_ORACLE 1)
-        message(STATUS "...building with Oracle")
-    else()
-        set(WITH_ORACLE FALSE)
-        set(ORACLE_LIBRARY "")
-    endif()
-endif()
-
-
-#
-# LASZIP support (optional)
-#
-option(WITH_LASZIP "Choose if LASzip support should be built" TRUE)
-option(WITH_STATIC_LASZIP "Choose if LASzip should be statically linked" FALSE)
-mark_as_advanced(WITH_STATIC_LASZIP)
-
-if(WITH_LASZIP)
-    find_package(LASzip 1.0.1)
-    if(LASZIP_FOUND)
-        set(CMAKE_REQUIRED_LIBRARIES "${LASZIP_LIBRARY}")
-        include_directories(${LASZIP_INCLUDE_DIR})
-        mark_as_advanced(CLEAR LASZIP_INCLUDE_DIR)
-        mark_as_advanced(CLEAR LASZIP_LIBRARY)
-        mark_as_advanced(CLEAR LASZIP_VERSION)
-        set(PDAL_HAVE_LASZIP 1)
-    else()
-        set(LASZIP_LIBRARY "")
-        set(WITH_LASZIP FALSE)
-    endif()
-endif()
-
-
-#
-# ZLIB support - required
-#
-find_package(ZLIB REQUIRED)
-if(ZLIB_FOUND)
-    set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} "${ZLIB_LIBRARY}")
-	include_directories(${ZLIB_INCLUDE_DIR})
-	mark_as_advanced(CLEAR ZLIB_INCLUDE_DIR)
-	mark_as_advanced(CLEAR ZLIB_LIBRARY)
-	set(PDAL_HAVE_ZLIB 1)
-endif()
-
-
-#
-# MrSID/LiDAR support (optional)
-#
-option(WITH_MRSID "Choose if MrSID/LiDAR support should be built" FALSE)
-
-if(WITH_MRSID)
-
-    set(MRSID_ROOT "/Users/hobu/installs/mrsid/Lidar_DSDK" CACHE STRING "Root directory of MrSID install")
-
-    find_package(MrSID)
-    if(MRSID_FOUND)
-        set(CMAKE_REQUIRED_LIBRARIES "${MRSID_LIBRARY}")
-        include_directories(${MRSID_INCLUDE_DIR})
-        add_definitions(-DHAVE_MRSID=1)
-        set(PDAL_HAVE_MRSID 1)
-    endif()
-endif()
-
-
-#
-# CARIS/BDB support (optional)
-#
-option(WITH_CARIS "Choose if CARIS/BDB support should be built" FALSE)
-if(WITH_CARIS)
-    set(CARIS_FOUND 1)
-    set(PDAL_HAVE_CARIS 1)
-endif()
-
-
-#
-# Points2Grid (optional)
-#
-option(WITH_P2G "Choose if Points2Grid support should be built" FALSE)
-if(WITH_P2G)
-    find_package(Points2Grid)
-    if(P2G_FOUND)
-        set(CMAKE_REQUIRED_LIBRARIES "${P2G_LIBRARY}")
-        include_directories(${P2G_INCLUDE_DIR})
-        add_definitions(-DHAVE_P2G=1)
-        set(PDAL_HAVE_P2G 1)
-    endif()
-endif()
-
-
-#
-# HDF5 - optional
-#
-option(WITH_HDF5 "Choose if HDF5 support should be built" FALSE)
-if(WITH_HDF5)
-    set (HDF5_FIND_COMPONENTS "CXX")
-    find_package(HDF5 COMPONENTS CXX)
-    if(HDF5_FOUND)
-        include_directories(${HDF5_INCLUDE_DIR})
-        add_definitions(-DHAVE_HDF5=1)
-        set(PDAL_HAVE_HDF5 1)
-        message(STATUS "Found HDF5")
-    else()
-        set(WITH_HDF5 FALSE)
-        set(PDAL_HAVE_HDF5 0)
-        message(STATUS "HDF5 not found")
-    endif()
-endif()
-
-
-#
-# Hexer - optional
-#
-option(WITH_HEXER "Whether or not hexbin filter is built" FALSE)
-if(WITH_HEXER)
-    find_package(Hexer)
-    if(HEXER_FOUND)
-        include_directories(${HEXER_INCLUDE_DIR})
-        add_definitions(-DHAVE_HEXER=1)
-        set(PDAL_HAVE_HEXER 1)
-    endif()
-endif()
-
-
-#
-# Python - optional
-#
-option(WITH_PYTHON "Choose if Python support (for PLang filters) should be built" TRUE)
-if(WITH_PYTHON)
-    FIND_PACKAGE(PythonInterp)
-    find_package(PythonLibs 2.4)
-    if(PYTHONLIBS_FOUND)
-        set(CMAKE_REQUIRED_LIBRARIES "${PYTHON_LIBRARY}")
-        include_directories(SYSTEM ${PYTHON_INCLUDE_DIR})
-        add_definitions(-DHAVE_PYTHON=1)
-        set(PDAL_HAVE_PYTHON 1)
-
-        find_package(NumPy 1.5 REQUIRED)
-        include_directories(SYSTEM ${NUMPY_INCLUDE_DIR})
-        message(STATUS "Found Python: ${PYTHON_LIBRARY}")
-    else()
-        set(WITH_PYTHON FALSE)
-        set(PYTHON_LIBRARY "")
-    endif()
-endif()
-
-
-#
-# libxml2 (used iff ORACLE or PGPOINTCLOUD or SQLITE)
-#
-option(WITH_LIBXML2 "Choose if libxml2 support should be built " FALSE)
-if (WITH_LIBXML2 OR
-    (WITH_ORACLE OR
-     WIT_PGPOINTCLOUD OR
-     WITH_SQLITE))
-    set(WITH_LIBXML2 TRUE)
-else()
-    set(WITH_LIBXML2 FALSE)
-endif()
-
-if(WITH_LIBXML2)
-    find_package(LibXml2)
-    if(LIBXML2_FOUND)
-        mark_as_advanced(CLEAR LIBXML2_INCLUDE_DIR)
-        mark_as_advanced(CLEAR LIBXML2_LIBRARIES)
-        include_directories(${LIBXML2_INCLUDE_DIR})
-        set(PDAL_HAVE_LIBXML2 1)
-    else()
-        set(WITH_LIBXML2 FALSE)
-        set(LIBXML2_LIBRARIES "")
-    endif()
-endif()
-
+include(${PDAL_CMAKE_DIR}/boost.cmake)
+include(${PDAL_CMAKE_DIR}/caris.cmake)  # Optional
+include(${PDAL_CMAKE_DIR}/gdal.cmake)
+include(${PDAL_CMAKE_DIR}/geos.cmake)  # Optional
+include(${PDAL_CMAKE_DIR}/geotiff.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/hdf5.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/hexer.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/laszip.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/mrsid.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/nitro.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/oracle.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/python.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/sqlite.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/points2grid.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/pgpointcloud.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/zlib.cmake)
 
 option(USE_PDAL_PLUGIN_TEXT "Build the text driver as a plugin rather than embedding" FALSE)
 option(USE_PDAL_PLUGIN_SOCI "Build the soci driver as a plugin rather than embedding" FALSE)
@@ -579,8 +232,6 @@ else()
       "CTest support requested but WITH_TESTS option not specified to build of PDAL unit tests")
   endif()
 endif()
-
-
 
 #------------------------------------------------------------------------------
 # CPACK controls

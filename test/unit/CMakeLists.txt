@@ -5,6 +5,7 @@
 # Copyright (c) 2009 Mateusz Loskot <mateusz@loskot.net>
 #
 ###############################################################################
+
 SET(PDAL_UNIT_TEST pdal_test)
 
 configure_file(
@@ -222,9 +223,6 @@ set_target_properties(${PDAL_UNIT_TEST} PROPERTIES COMPILE_DEFINITIONS
 
 if(WIN32)
     add_definitions("-DPDAL_DLL_EXPORT=1")
-    if (MSVC)
-        #add_definitions("-DBOOST_TEST_DYN_LINK")
-    endif()
 else()
     add_definitions("-DBOOST_TEST_DYN_LINK")
 endif()
@@ -236,3 +234,5 @@ TARGET_LINK_LIBRARIES(  ${PDAL_UNIT_TEST} ${BOOST_LINKAGE}
                         ${Boost_LIBRARIES} )
 
 ADD_TEST(pdal_test "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/pdal_test" "${PROJECT_SOURCE_DIR}/test/data" --catch_system_errors=no)
+
+add_subdirectory(${ROOT_DIR}/tools/lasdump ${CMAKE_BINARY_DIR}/lasdump)

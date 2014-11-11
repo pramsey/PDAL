@@ -140,7 +140,7 @@ void Writer::getHeaderOptions(const Options &options)
             }
         }
         else
-            value = options.getValueOrDefault<std::string>(name, defVal);
+            value = options.getValueOrDefault(name, defVal);
         m_headerVals[name] = value;
     };
 
@@ -434,7 +434,7 @@ void Writer::fillHeader(PointContextRef ctx)
     m_lasHeader.setCreationDOY(headerVal<uint16_t>("creation_year"));
     m_lasHeader.setCreationDOY(headerVal<uint16_t>("creation_doy"));
     m_lasHeader.setSoftwareId(headerVal<std::string>("software_id"));
-    m_lasHeader.setSoftwareId(headerVal<std::string>("system_id"));
+    m_lasHeader.setSystemId(headerVal<std::string>("system_id"));
     m_lasHeader.setProjectId(headerVal<boost::uuids::uuid>("project_id"));
 
     uint16_t reserved(0);

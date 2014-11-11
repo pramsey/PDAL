@@ -34,10 +34,7 @@
 
 #include "UnitTest.hpp"
 
-#include <boost/cstdint.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <boost/concept_check.hpp>
+#include <stdlib.h>
 
 #include <pdal/FileUtils.hpp>
 #include <pdal/drivers/faux/Reader.hpp>
@@ -100,46 +97,63 @@ BOOST_AUTO_TEST_CASE(auto_offset)
     FileUtils::deleteFile(FILENAME);
 }
 
+namespace
+{
 
-//ABELL
-/**
-BOOST_AUTO_TEST_CASE(LasWriterTest_test_simple_las)
+bool diffdump(const std::string& f1, const std::string& f2)
+{
+    auto dump = [](const std::string& temp, const std::string& in)
+    {
+        std::stringstream ss;
+        ss << "lasdump -o " << temp << " " << in;
+        system(ss.str().c_str());
+    };
+
+    std::string t1 = Support::temppath("lasdump1.tmp");
+    std::string t2 = Support::temppath("lasdump2.tmp");
+
+    dump(t1, f1);
+    dump(t2, f2);
+
+    std::string diffFile = Support::temppath("dumpdiff.tmp");
+    std::stringstream ss;
+    ss << "diff " << t1 << " " << t2 << " > " << diffFile;
+    system(ss.str().c_str());
+
+    return true;
+}
+
+}
+
+BOOST_AUTO_TEST_CASE(simple)
 {
     PointContext ctx;
 
+    std::string infile(Support::datapath("las/1.2-with-color.las"));
+    std::string outfile(Support::temppath("simple.las"));
+
     // remove file from earlier run, if needed
-    std::string temp_filename("temp-LasWriterTest_test_simple_las.las");
-    FileUtils::deleteFile(temp_filename);
+    FileUtils::deleteFile(outfile);
 
     Options readerOpts;
-    
-    readerOpts.add("filename", Support::datapath("las/1.2-with-color.las"));
+    readerOpts.add("filename", infile);
 
     Options writerOpts;
-    writerOpts.add("creation_year", 0);
-    writerOpts.add("creation_doy", 0);
-    writerOpts.add("software_id", "TerraScan");
+    writerOpts.add("creation_year", 2014);
+    writerOpts.add("filename", outfile);
 
     drivers::las::Reader reader;
-    std::ostream* ofs = FileUtils::createFile(Support::temppath(temp_filename));
+    reader.setOptions(readerOpts);
 
-    drivers::las::Writer writer(ofs);
+    drivers::las::Writer writer;
     writer.setOptions(writerOpts);
     writer.setInput(&reader);
     BOOST_CHECK_EQUAL(writer.getDescription(), "Las Writer");
     writer.prepare(ctx);
     writer.execute(ctx);
 
-    FileUtils::closeFile(ofs);
-
-    bool filesSame = Support::compare_files(Support::temppath(temp_filename),
-        Support::datapath("simple.las"));
-    BOOST_CHECK_EQUAL(filesSame, true);
-
-    if (filesSame)
-        FileUtils::deleteFile(Support::temppath(temp_filename));
+    diffdump(infile, outfile);
 }
-**/
 
 //ABELL
 /**
@@ -217,8 +231,10 @@ static void test_a_format(const std::string& refFile, uint8_t majorVersion,
     writerOpts.add("minor_version", (unsigned)minorVersion);
     writerOpts.add("system_id", "libLAS");
     writerOpts.add("software_id", "libLAS 1.2");
-    writerOpts.add("project_id", boost::lexical_cast<boost::uuids::uuid>(
-        "8388f1b8-aa1b-4108-bca3-6bc68e7b062e"));
+    writerOpts.add<boost::uuids::uuuid>("project_id",
+        "8388f1b8-aa1b-4108-bca3-6bc68e7b062e");
+//    writerOpts.add("project_id", boost::lexical_cast<boost::uuids::uuid>(
+//        "8388f1b8-aa1b-4108-bca3-6bc68e7b062e");
 
     std::ostream* ofs = FileUtils::createFile(Support::temppath("temp.las"));
 
