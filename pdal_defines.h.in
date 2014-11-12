@@ -42,7 +42,6 @@
 #cmakedefine PDAL_HAVE_SQLITE
 #cmakedefine PDAL_HAVE_POSTGRESQL
 
-
 /*
  * plugins
  */
