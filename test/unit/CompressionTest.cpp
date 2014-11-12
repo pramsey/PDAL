@@ -82,110 +82,92 @@ BOOST_AUTO_TEST_CASE(test_compress_file)
     using namespace pdal;
 
     const std::string file(Support::datapath("las/1.2-with-color.las"));
-//
+
     const pdal::Option opt_filename("filename", file);
     pdal::Options opts;
     opts.add(opt_filename);
-//
+
     pdal::drivers::las::Reader reader;
     reader.setOptions(opts);
-//
+
     PointContext ctx;
     reader.prepare(ctx);
     PointBufferSet buffers = reader.execute(ctx);
     PointBufferPtr buffer = *buffers.begin();
-//
+
     BOOST_CHECK_EQUAL(ctx.pointSize(), 52);
     SQLiteTestStream s;
     compression::Compress<SQLiteTestStream>(ctx, *buffer, s, compression::CompressionType::Lazperf, 0, 0);
     BOOST_CHECK_EQUAL(buffer->getBytes().size(), 55380);
-    BOOST_CHECK_EQUAL(s.buf.size(), 31889);
-//
+    BOOST_CHECK_EQUAL(s.buf.size(), 30945);
+
     SQLiteTestStream s2;
     s2.buf = s.buf;
     PointBufferPtr b = compression::Decompress<SQLiteTestStream>(ctx, s2, 11, compression::CompressionType::Lazperf);
-//     std::cout << *b << std::endl;
+
     BOOST_CHECK_EQUAL(b->size(), 11);
     BOOST_CHECK_EQUAL(b->getBytes().size(), 52 * 11);
-//
-//
+
     boost::uint16_t r = b->getFieldAs<boost::uint16_t>(Dimension::Id::Red, 10);
     BOOST_CHECK_EQUAL(r, 64u);
     boost::int32_t x = b->getFieldAs<boost::int32_t>(Dimension::Id::X, 10);
     BOOST_CHECK_EQUAL(x, 636038);
     double xd = b->getFieldAs<double>(Dimension::Id::X, 10);
     BOOST_CHECK_CLOSE(xd, 636037.53, 0.001);
-
-//
-//     PointContext ctx;
-//     ctx.registerDim(Dimension::Id::X);
-//     ctx.registerDim(Dimension::Id::Y);
-//     ctx.registerDim(Dimension::Id::Z);
-//     ctx.registerDim(Dimension::Id::GpsTime);
-//     ctx.registerDim(Dimension::Id::Intensity);
-//     ctx.registerDim(Dimension::Id::PointSourceId);
-//     ctx.registerDim(Dimension::Id::ScanAngleRank);
-//     ctx.registerDim(Dimension::Id::Red);
-//     ctx.registerDim(Dimension::Id::Green);
-//     ctx.registerDim(Dimension::Id::Blue);
-//     ctx.registerDim(Dimension::Id::ReturnNumber);
-//     ctx.registerDim(Dimension::Id::NumberOfReturns);
-//     ctx.registerDim(Dimension::Id::ScanDirectionFlag);
-//     ctx.registerDim(Dimension::Id::EdgeOfFlightLine);
-//     ctx.registerDim(Dimension::Id::Classification);
-//     ctx.registerDim(Dimension::Id::UserData);
-//
-//
-// //     GpsTime (double) : 249773
-// // ScanAngleRank (float) : 11
-// // Intensity (uint16_t) : 31
-// // PointSourceId (uint16_t) : 7334
-// // Red (uint16_t) : 176
-// // Green (uint16_t) : 138
-// // Blue (uint16_t) : 164
-// // ReturnNumber (uint8_t) : 1
-// // NumberOfReturns (uint8_t) : 1
-// // ScanDirectionFlag (uint8_t) : 0
-// // EdgeOfFlightLine (uint8_t) : 0
-// // Classification (uint8_t) : 1
-// // UserData (uint8_t) : 125
-//     PointBuffer buffer(ctx);
-//
-//     for (PointId i = 0; i < 100; ++i)
-//     {
-//         buffer.setField(Dimension::Id::X, i, i);
-//         buffer.setField(Dimension::Id::Y, i, i+100);
-//         buffer.setField(Dimension::Id::Z, i, i+1000);
-//         buffer.setField(Dimension::Id::GpsTime, i, i+10000);
-//         buffer.setField(Dimension::Id::Intensity, i, 600);
-//         buffer.setField(Dimension::Id::PointSourceId, i, 60);
-//         buffer.setField(Dimension::Id::ScanAngleRank, i, 1003.23);
-//         buffer.setField(Dimension::Id::Red, i, 26);
-//         buffer.setField(Dimension::Id::Green, i, 42);
-//         buffer.setField(Dimension::Id::Blue, i, 255);
-//         buffer.setField(Dimension::Id::ReturnNumber, i, 2);
-//         buffer.setField(Dimension::Id::NumberOfReturns, i, 2);
-//         buffer.setField(Dimension::Id::ScanDirectionFlag, i, 1);
-//         buffer.setField(Dimension::Id::EdgeOfFlightLine, i, 1);
-//         buffer.setField(Dimension::Id::Classification, i, 2);
-//         buffer.setField(Dimension::Id::UserData, i, 25);
-//     }
-// //     std::cout << buffer << std::endl;
-//     SQLiteTestStream s;
-//     compression::Compress<SQLiteTestStream>(ctx, buffer, s, compression::CompressionType::Lazperf, 0, 0);
-//     SQLiteTestStream s2;
-//     s2.buf = s.buf;
-//     PointBufferPtr b = compression::Decompress<SQLiteTestStream>(ctx, s2, 11, compression::CompressionType::Lazperf);
-//     std::cout << *b << std::endl;
-//     boost::uint16_t r = b->getFieldAs<boost::uint16_t>(Dimension::Id::Red, 10);
-//     BOOST_CHECK_EQUAL(r, 26u);
+    boost::int32_t y = b->getFieldAs<boost::int32_t>(Dimension::Id::Y, 10);
+    BOOST_CHECK_EQUAL(y, 849338);
 }
 
 
-BOOST_AUTO_TEST_CASE(test_compress_buffer)
+BOOST_AUTO_TEST_CASE(test_compress_copied_buffer)
 {
     using namespace pdal;
+
+
+    const std::string file(Support::datapath("las/1.2-with-color.las"));
+    const pdal::Option opt_filename("filename", file);
+    pdal::Options opts;
+    opts.add(opt_filename);
+    pdal::drivers::las::Reader reader;
+    reader.setOptions(opts);
+    PointContext fctx;
+    reader.prepare(fctx);
+    PointBufferSet buffers = reader.execute(fctx);
+    PointBufferPtr buffer = *buffers.begin();
+
+    PointContext ctx;
+    ctx.registerDim(Dimension::Id::X);
+    ctx.registerDim(Dimension::Id::Y);
+    ctx.registerDim(Dimension::Id::Z);
+    PointBuffer new_buffer(ctx);
 //
+    for (PointId i = 0; i < buffer->size(); ++i)
+    {
+        new_buffer.setField(Dimension::Id::X, i, buffer->getFieldAs<double>(Dimension::Id::X, i));
+        new_buffer.setField(Dimension::Id::Y, i, buffer->getFieldAs<double>(Dimension::Id::Y, i));
+        new_buffer.setField(Dimension::Id::Z, i, buffer->getFieldAs<double>(Dimension::Id::Z, i));
+    }
+    SQLiteTestStream s;
+    compression::Compress<SQLiteTestStream>(ctx, new_buffer, s, compression::CompressionType::Lazperf, 0, 0);
+    SQLiteTestStream s2;
+    s2.buf = s.buf;
+    PointBufferPtr b = compression::Decompress<SQLiteTestStream>(ctx, s2, 11, compression::CompressionType::Lazperf);
+
+    boost::int32_t y = b->getFieldAs<boost::int32_t>(Dimension::Id::Y, 10);
+    BOOST_CHECK_EQUAL(y, 849338);
+    boost::int32_t x = b->getFieldAs<boost::int32_t>(Dimension::Id::X, 10);
+    BOOST_CHECK_EQUAL(x, 636038);
+    double xd = b->getFieldAs<double>(Dimension::Id::X, 10);
+    BOOST_CHECK_CLOSE(xd, 636037.53, 0.001);
+
+}
+
+
+
+BOOST_AUTO_TEST_CASE(test_compress_simple_buffer)
+{
+    using namespace pdal;
+
     PointContext ctx;
     ctx.registerDim(Dimension::Id::X);
     ctx.registerDim(Dimension::Id::Y);
@@ -203,23 +185,7 @@ BOOST_AUTO_TEST_CASE(test_compress_buffer)
     ctx.registerDim(Dimension::Id::EdgeOfFlightLine);
     ctx.registerDim(Dimension::Id::Classification);
     ctx.registerDim(Dimension::Id::UserData);
-//
-//
-//     GpsTime (double) : 249773
-// ScanAngleRank (float) : 11
-// Intensity (uint16_t) : 31
-// PointSourceId (uint16_t) : 7334
-// Red (uint16_t) : 176
-// Green (uint16_t) : 138
-// Blue (uint16_t) : 164
-// ReturnNumber (uint8_t) : 1
-// NumberOfReturns (uint8_t) : 1
-// ScanDirectionFlag (uint8_t) : 0
-// EdgeOfFlightLine (uint8_t) : 0
-// Classification (uint8_t) : 1
-// UserData (uint8_t) : 125
     PointBuffer buffer(ctx);
-//
     for (PointId i = 0; i < 100; ++i)
     {
         buffer.setField(Dimension::Id::X, i, i);
@@ -239,19 +205,15 @@ BOOST_AUTO_TEST_CASE(test_compress_buffer)
         buffer.setField(Dimension::Id::Classification, i, 2);
         buffer.setField(Dimension::Id::UserData, i, 25);
     }
-//     std::cout << buffer << std::endl;
+
     SQLiteTestStream s;
     compression::Compress<SQLiteTestStream>(ctx, buffer, s, compression::CompressionType::Lazperf, 0, 0);
     SQLiteTestStream s2;
     s2.buf = s.buf;
     PointBufferPtr b = compression::Decompress<SQLiteTestStream>(ctx, s2, 11, compression::CompressionType::Lazperf);
+//     std::cout << *b << std::endl;
     boost::uint16_t r = b->getFieldAs<boost::uint16_t>(Dimension::Id::Red, 10);
     BOOST_CHECK_EQUAL(r, 26u);
-    boost::int32_t x = b->getFieldAs<boost::int32_t>(Dimension::Id::X, 10);
-    BOOST_CHECK_EQUAL(x, 10);
-    double xd = b->getFieldAs<double>(Dimension::Id::X, 10);
-    BOOST_CHECK_CLOSE(xd, 10.0, 0.001);
-
 }
 BOOST_AUTO_TEST_SUITE_END()
 

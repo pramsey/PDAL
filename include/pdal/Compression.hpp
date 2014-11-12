@@ -190,7 +190,9 @@ template <typename CompressionStream> inline void Compress(PointContextRef ctx,
         {
             if (s == 8)
             {
-                compressor->template add_field<las::gpstime>();
+                compressor->template add_field<unsigned int>();
+                compressor->template add_field<unsigned int>();
+//                 compressor->template add_field<las::gpstime>();
             }
             else
                 throw pdal_error("Dimension is type Double but size != 8!");
@@ -330,7 +332,9 @@ template <typename CompressionStream> inline PointBufferPtr Decompress(PointCont
         {
             if (s == 8)
             {
-                decompressor->template add_field<las::gpstime>();
+                decompressor->template add_field<unsigned int>();
+                decompressor->template add_field<unsigned int>();
+//                 decompressor->template add_field<las::gpstime>();
             }
             else
                 throw pdal_error("Dimension is type Double but size != 8!");
