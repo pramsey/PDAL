@@ -54,7 +54,8 @@ namespace
     {
         auto ischar = [](char c)
         {
-            return c == ';' || c == ':' || c == ' ' || c == '\'' || c == '\"' || c == '[' || c ==']';
+            return c == ';' || c == ':' || c == ' ' || c == '\'' ||
+                c == '\"' || c == '[' || c ==']';
         };
 
         std::string v;
@@ -207,7 +208,6 @@ private:
         }
         return MetadataType::Instance;
     }
-
 
     std::string toJSON() const;
     void toJSON(std::ostream& o, int level) const;
@@ -452,8 +452,41 @@ public:
         }
     std::string name() const
         { return m_impl->m_name; }
+
+    template<typename T>
+    T value() const
+    {
+        T t;
+
+        if (m_impl->m_type == "base64Binary")
+        {
+            std::vector<uint8_t> encVal =
+                Utils::base64_decode(m_impl->m_value);
+            encVal.resize(sizeof(T));
+            memcpy(&t, encVal.data(), sizeof(T));
+        }
+        else
+        {
+            try
+            {
+                t = boost::lexical_cast<T>(m_impl->m_value);
+            }
+            catch (boost::bad_lexical_cast&)
+            {
+                // Static to get default initialization.
+                static T t2;
+                std::cerr << "Error converting metadata [" << name() <<
+                    "] = " << m_impl->m_value << " to type " <<
+                    Utils::typeidName<T>() << " -- return default initialized.";
+                t = t2;
+            }
+        }
+        return t;
+    }
+
     std::string value() const
         { return m_impl->m_value; }
+
     std::string description() const
         { return m_impl->m_descrip; }
     std::vector<MetadataNode> children() const

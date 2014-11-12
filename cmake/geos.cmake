@@ -1,0 +1,18 @@
+#
+# GEOS (optional)
+#
+find_package(GEOS 3.3)
+if (GEOS_FOUND)
+    find_file(GEOS_VERSION_H version.h "${GEOS_INCLUDE_DIR}/geos")
+    if ("${GEOS_VERSION_H}" STREQUAL "GEOS_VERSION_H-NOTFOUND")
+        set(GEOS_LIBRARY "")
+        set(GEOS_FOUND FALSE)
+        set(WITH_GEOS FALSE)
+    else()
+        include_directories("${GEOS_INCLUDE_DIR}")
+        set(PDAL_HAVE_GEOS 1)
+        message(STATUS "...building with GEOS")
+    endif()
+else()
+    set(GEOS_LIBRARY "")
+endif()

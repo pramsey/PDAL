@@ -79,13 +79,33 @@ endif(WIN32)
 
 # Choose package components
 option(WITH_APPS "Choose if PDAL utilities should be built" TRUE)
-option(WITH_GREYHOUND "Choose if Greyhound support should be built" FALSE)
-option(WITH_PCL "Choose if PCL support should be built" FALSE)
+option(BUILD_PLUGIN_GREYHOUND "Choose if Greyhound support should be built" FALSE)
+option(BUILD_PLUGIN_HEXBIN "Whether or not HexBin filter is built" FALSE)
+option(BUILD_PLUGIN_ICEBRIDGE "Choose if Icebridge support should be built" FALSE)
+option(BUILD_PLUGIN_MRSID "Choose if MrSID/LiDAR support should be built" FALSE)
+option(BUILD_PLUGIN_NITF "Choose if NITF support should be built (only install supported is from http://github.com/hobu/nitro)" TRUE)
+option(BUILD_PLUGIN_OCI "Choose if OCI support should be built" TRUE)
+option(BUILD_PLUGIN_P2G "Choose if Points2Grid support should be built" FALSE)
+option(BUILD_PLUGIN_PCL "Choose if PCL support should be built" FALSE)
+option(BUILD_PLUGIN_PGPOINTCLOUD "Choose if PostgreSQL PointCloud support should be built" TRUE)
+option(BUILD_PLUGIN_SQLITE "Choose if SQLite database support should be built" FALSE)
+option(BUILD_PLUGIN_RIVLIB "Choose if RiVLib support should be built" FALSE)
 option(WITH_TESTS "Choose if PDAL unit tests should be built" TRUE)
 
 # Choose to use pkg-config or not
 option(WITH_PKGCONFIG "Choose whether a pkgconfig file (PDAL.pc) should be installed" TRUE)
 
+# Choose dependent options
+include(CMakeDependentOption)
+
+cmake_dependent_option(BUILD_PGPOINTCLOUD_TESTS "Choose if PostgreSQL PointCloud tests should be built" OFF BUILD_PLUGIN_PGPOINTCLOUD OFF)
+cmake_dependent_option(BUILD_SQLITE_TESTS "Choose if SQLite tests should be built" OFF BUILD_PLUGIN_SQLITE OFF)
+cmake_dependent_option(BUILD_OCI_TESTS "Choose if OCI tests should be built" OFF BUILD_PLUGIN_OCI OFF)
+cmake_dependent_option(BUILD_RIVLIB_TESTS "Choose if RiVLib tests should be built" OFF BUILD_PLUGIN_RIVLIB OFF)
+
+if(BUILD_PLUGIN_PGPOINTCLOUD OR BUILD_PLUGIN_OCI OR BUILD_PLUGIN_SQLITE)
+    include(${PDAL_CMAKE_DIR}/libxml2.cmake)
+endif()
 
 #------------------------------------------------------------------------------
 # test harness settings
@@ -124,62 +144,30 @@ if(WIN32)
 endif(WIN32)
 
 # note we default to debug mode
-if(NOT MSVC_IDE)
-  if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug CACHE STRING
-    "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel" FORCE)
-  endif()
-  message(STATUS "Setting PDAL build type - ${CMAKE_BUILD_TYPE}")
-endif()
+#if(NOT MSVC_IDE)
+#  if(NOT CMAKE_BUILD_TYPE)
+#  set(CMAKE_BUILD_TYPE Debug CACHE STRING
+#    "Choose the type of build, options are: None Debug Release RelWithDebInfo MinSizeRel" FORCE)
+#  endif()
+#  message(STATUS "Setting PDAL build type - ${CMAKE_BUILD_TYPE}")
+#endif()
 
 set(PDAL_BUILD_TYPE ${CMAKE_BUILD_TYPE})
 
-#------------------------------------------------------------------------------
-# Platform and compiler specific settings
-#------------------------------------------------------------------------------
-
-#ABELL - Think this is magic now.
-#if (APPLE)
-#    set(SO_EXT dylib)
-#    set(CMAKE_FIND_FRAMEWORK "LAST")
-#elseif(WIN32)
-#    set(SO_EXT dll)
-#else()
-#    set(SO_EXT so)
-#endif(APPLE)
-
 find_package(Threads)
 
+#------------------------------------------------------------------------------
+#  Dependencies.
+#------------------------------------------------------------------------------
+
 include(${PDAL_CMAKE_DIR}/boost.cmake)
-include(${PDAL_CMAKE_DIR}/caris.cmake)  # Optional
+include(${PDAL_CMAKE_DIR}/caris.cmake) # Optional
 include(${PDAL_CMAKE_DIR}/gdal.cmake)
 include(${PDAL_CMAKE_DIR}/geos.cmake)  # Optional
-include(${PDAL_CMAKE_DIR}/geotiff.cmake) # Optional
-include(${PDAL_CMAKE_DIR}/hdf5.cmake) # Optional
-include(${PDAL_CMAKE_DIR}/hexer.cmake) # Optional
-include(${PDAL_CMAKE_DIR}/laszip.cmake) # Optional
-include(${PDAL_CMAKE_DIR}/mrsid.cmake) # Optional
-include(${PDAL_CMAKE_DIR}/nitro.cmake) # Optional
-include(${PDAL_CMAKE_DIR}/oracle.cmake) # Optional
-include(${PDAL_CMAKE_DIR}/python.cmake) # Optional
-include(${PDAL_CMAKE_DIR}/sqlite.cmake) # Optional
-include(${PDAL_CMAKE_DIR}/points2grid.cmake) # Optional
-include(${PDAL_CMAKE_DIR}/pgpointcloud.cmake) # Optional
+include(${PDAL_CMAKE_DIR}/geotiff.cmake)  # Optional
+include(${PDAL_CMAKE_DIR}/laszip.cmake)  # Optional
+include(${PDAL_CMAKE_DIR}/python.cmake)  # Optional
 include(${PDAL_CMAKE_DIR}/zlib.cmake)
-
-option(USE_PDAL_PLUGIN_TEXT "Build the text driver as a plugin rather than embedding" FALSE)
-option(USE_PDAL_PLUGIN_SOCI "Build the soci driver as a plugin rather than embedding" FALSE)
-option(USE_PDAL_PLUGIN_OCI "Build the oci driver as a plugin rather than embedding" FALSE)
-option(USE_PDAL_PLUGIN_MRSID "Build the MrSID driver as a plugin rather than embedding" FALSE)
-option(USE_PDAL_PLUGIN_CARIS "Build the Caris driver as a plugin rather than embedding" FALSE)
-option(USE_PDAL_PLUGIN_NITRO "Build the NITF writer as a plugin rather than embedding" FALSE)
-
-if (USE_PDAL_PLUGIN_TEXT OR USE_PDAL_PLUGIN_SOCI OR USE_PDAL_PLUGIN_OCI OR
-    USE_PDAL_PLUGIN_MRSID OR USE_PDAL_PLUGIN_CARIS OR USE_PDAL_PLUGIN_NITRO)
-  if (PDAL_BUILD_STATIC)
-    message(SEND_ERROR "Cannot build separate plugins with statically compiled PDAL")
-  endif()
-endif()
 
 #------------------------------------------------------------------------------
 # generate the pdal_defines.h header
@@ -203,14 +191,7 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}/include")
 # subdirectory controls
 #------------------------------------------------------------------------------
 
-add_subdirectory(src)
-add_subdirectory(plugins)
-
-if(WITH_APPS)
-  add_subdirectory(apps)
-endif()
-
-if (WITH_TESTS)
+if(WITH_TESTS)
   message(STATUS "Building with PDAL unit tests")
   enable_testing()
 
@@ -231,6 +212,13 @@ else()
     message(WARNING
       "CTest support requested but WITH_TESTS option not specified to build of PDAL unit tests")
   endif()
+endif()
+
+add_subdirectory(src)
+add_subdirectory(plugins)
+
+if(WITH_APPS)
+  add_subdirectory(apps)
 endif()
 
 #------------------------------------------------------------------------------
