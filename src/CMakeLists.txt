@@ -519,7 +519,7 @@ if (WITH_PYTHON)
     target_link_libraries(${PDAL_LIB_NAME} ${PDAL_LINKAGE} "${PYTHON_LIBRARY}")
 endif()
 
-if (WITH_LIBXML2)
+if (PDAL_HAVE_LIBXML2)
     target_link_libraries(${PDAL_LIB_NAME} ${PDAL_LINKAGE} ${LIBXML2_LIBRARIES})
 endif()
 

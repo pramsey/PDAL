@@ -1,22 +1,15 @@
 cmake_minimum_required(VERSION 2.8.6)
 
-project(LASDUMP)
-
 set(MAKE_COLOR_MAKEFILE ON)
 
-set(ROOT_PATH "${PROJECT_SOURCE_DIR}/../..")
-set(PDAL_SRC "${ROOT_PATH}/src")
-set(PDAL_INCLUDE "${ROOT_PATH}/include")
-set(PDAL_UTIL "${ROOT_PATH}/util")
-set(PDAL_CMAKE "${ROOT_PATH}/cmake")
-set(PDAL_MODULES "${PDAL_CMAKE}/modules")
+if(NOT ROOT_DIR)
+    project(LASDUMP)
+    set(ROOT_DIR "${PROJECT_SOURCE_DIR}/../..")
+endif()
+include(${ROOT_DIR}/cmake/common.cmake NO_POLICY_SCOPE)
 
-include(${PDAL_CMAKE}/compiler_options.cmake)
-
-set(CMAKE_MODULE_PATH ${PDAL_MODULES} ${CMAKE_MODULE_PATH})
-
-add_subdirectory(${PDAL_UTIL} "${CMAKE_CURRENT_BINARY_DIR}/util")
-include_directories(${PDAL_UTIL} "${PDAL_INCLUDE}" ${PROJECT_SOURCE_DIR})
+add_subdirectory(${PDAL_UTIL_DIR} "${CMAKE_CURRENT_BINARY_DIR}/util")
+include_directories(${PDAL_UTIL_DIR} ${PDAL_INCLUDE_DIR})
 
 set (SOURCES
     Dumper.cpp
@@ -30,11 +23,15 @@ set (HEADERS
     Vlr.hpp
 )
 
+#
+# Add necessary modules.
+#
 find_package(LASZIP)
 
-add_executable(lasdump ${SOURCES} ${HEADERS} )
+add_executable(lasdump ${SOURCES} ${HEADERS})
 target_link_libraries(lasdump
     PdalUtil
     ${LASZIP_LIBRARIES}
 )
+
 

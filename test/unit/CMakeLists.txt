@@ -108,6 +108,7 @@ endif()
 
 include_directories(
     ${PROJECT_SOURCE_DIR}/include
+    ${PDAL_UTIL_DIR}
     ${GDAL_INCLUDE_DIR}
     ${GEOTIFF_INCLUDE_DIR}
 )

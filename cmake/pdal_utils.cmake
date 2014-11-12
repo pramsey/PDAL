@@ -80,6 +80,7 @@ endmacro(GET_OS_INFO)
 # subdirectory named after the library in question (e.g.
 # "registration/blorgle.h")
 macro(SET_INSTALL_DIRS)
+  string(TOLOWER ${PROJECT_NAME} PROJECT_NAME_LOWER)
   if (NOT DEFINED PDAL_LIB_DIR)
     set(PDAL_LIB_DIR "lib")
   endif (NOT DEFINED PDAL_LIB_DIR)

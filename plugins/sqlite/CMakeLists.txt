@@ -3,6 +3,7 @@
 #
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PDAL_UTIL_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/plugins/sqlite)
 
 find_package(SQLite3)

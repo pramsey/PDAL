@@ -4,6 +4,9 @@
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/plugins/oci)
+include_directories(${PDAL_UTIL_DIR})
+
+include(${PDAL_CMAKE_DIR}/libxml2.cmake)
 
 find_package(Oracle)
 if(ORACLE_FOUND)
@@ -26,8 +29,12 @@ if(ORACLE_FOUND)
 	drivers/OciWrapper.h
     )
 
-    set(deps ${ORACLE_LIBRARY})
-    PDAL_ADD_PLUGIN(oci_reader_lib_name reader oci "${srcs}" "${incs}" "${deps}")
+    set(deps
+        ${ORACLE_LIBRARY}
+        ${LIBXML2_LIBRARIES}
+    )
+    PDAL_ADD_PLUGIN(oci_reader_lib_name reader oci
+        "${srcs}" "${incs}" "${deps}")
 
     #
     # OCI Writer
@@ -44,8 +51,12 @@ if(ORACLE_FOUND)
 	drivers/OciWriter.hpp
     )
 
-    set(deps ${ORACLE_LIBRARY})
-    PDAL_ADD_PLUGIN(oci_writer_lib_name writer oci "${srcs}" "${incs}" "${deps}")
+    set(deps
+        ${ORACLE_LIBRARY}
+        ${LIBXML2_LIBRARIES}
+    )
+    PDAL_ADD_PLUGIN(oci_writer_lib_name writer oci
+        "${srcs}" "${incs}" "${deps}")
 
     #
     # OCI tests

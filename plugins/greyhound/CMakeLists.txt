@@ -3,6 +3,7 @@
 #
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PDAL_UTIL_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/plugins/greyhound)
 
 find_package(JSONCPP)
@@ -34,6 +35,7 @@ if(JSONCPP_FOUND AND WEBSOCKETPP_FOUND)
     )
 
     set(deps ${JSONCPP_LIBRARY})
+    cmake_policy(SET CMP0042 OLD) # osx rpath
     PDAL_ADD_PLUGIN(greyhound_reader_lib_name reader greyhound "${srcs}" "${incs}" "${deps}")
 else()
     message(STATUS "Building without Greyhound support")
