@@ -78,6 +78,20 @@ enum Enum
 
 } // namespace CompressionType
 
+
+inline std::string listDims(PointContextRef ctx)
+{
+    std::ostringstream oss;    const Dimension::IdList& dims = ctx.dims();
+    for (auto di = dims.begin(); di != dims.end(); ++di)
+    {
+            Dimension::Type::Enum t = ctx.dimType(*di);
+            size_t s = ctx.dimSize(*di);
+            std::string name = Dimension::name(*di);
+            std::string ty = Dimension::interpretationName(t);
+            oss << name << " (" << ty << ") size: " << s << std::endl;
+    }
+    return oss.str();
+}
 template <typename CompressionStream> inline void Compress(PointContextRef ctx,
               const PointBuffer& buffer,
               CompressionStream& output,
@@ -93,29 +107,35 @@ template <typename CompressionStream> inline void Compress(PointContextRef ctx,
     EncoderType encoder(output);
     auto compressor = make_dynamic_compressor(encoder);
     const Dimension::IdList& dims = ctx.dims();
+//     std::cout << listDims(ctx) << std::endl;
     for (auto di = dims.begin(); di != dims.end(); ++di)
     {
-        std::cout << "compressing: : " << Dimension::name(*di) << std::endl;
         Dimension::Type::Enum t = ctx.dimType(*di);
         size_t s = ctx.dimSize(*di);
         if (t == Dimension::Type::Signed32)
         {
             if (s == 4)
+            {
                 compressor->template add_field<int>();
+            }
             else
                 throw pdal_error("Dimension is type Signed32 but size != 4!");
         }
         else if (t == Dimension::Type::Signed16)
         {
             if (s == 2)
+            {
                 compressor->template add_field<short>();
+            }
             else
                 throw pdal_error("Dimension is type Signed16 but size != 2  !");
         }
         else if (t == Dimension::Type::Signed8)
         {
             if (s == 1)
+            {
                 compressor->template add_field<char>();
+            }
             else
                 throw pdal_error("Dimension is type Signed8 but size != 1!");
         }
@@ -132,21 +152,27 @@ template <typename CompressionStream> inline void Compress(PointContextRef ctx,
         else if (t == Dimension::Type::Unsigned32)
         {
             if (s == 4)
+            {
                 compressor->template add_field<unsigned int>();
+            }
             else
                 throw pdal_error("Dimension is type Unsigned32 but size != 4!");
         }
         else if (t == Dimension::Type::Unsigned16)
         {
             if (s == 2)
+            {
                 compressor->template add_field<unsigned short>();
+            }
             else
                 throw pdal_error("Dimension is type Unsigned16 but size != 2!");
         }
         else if (t == Dimension::Type::Unsigned8)
         {
             if (s == 1)
+            {
                 compressor->template add_field<unsigned char>();
+            }
             else
                 throw pdal_error("Dimension is type Unsigned8 but size != 1!");
         }
@@ -163,14 +189,18 @@ template <typename CompressionStream> inline void Compress(PointContextRef ctx,
         else if (t == Dimension::Type::Double)
         {
             if (s == 8)
+            {
                 compressor->template add_field<las::gpstime>();
+            }
             else
                 throw pdal_error("Dimension is type Double but size != 8!");
         }
         else if (t == Dimension::Type::Float)
         {
             if (s == 4)
+            {
                 compressor->template add_field<int>();
+            }
             else
                 throw pdal_error("Dimension is type Float but size != 4!");
         }
@@ -201,18 +231,22 @@ template <typename CompressionStream> inline void Compress(PointContextRef ctx,
 
 
 
-template <typename CompressionStream> inline PointBufferPtr Decompress(PointContextRef ctx, CompressionStream& strm, size_t howMany, CompressionType::Enum ctype)
+template <typename CompressionStream> inline PointBufferPtr Decompress(PointContextRef ctx,
+                                                                       CompressionStream& strm,
+                                                                       size_t howMany,
+                                                                       CompressionType::Enum ctype)
 {
     using namespace laszip;
     using namespace laszip::formats;
 
     typedef decoders::arithmetic<CompressionStream> DecoderType;
 
-//     strm.buf.resize(howMany * ctx.pointSize());
+
     DecoderType decoder(strm);
     auto decompressor = make_dynamic_decompressor(decoder);
     const Dimension::IdList& dims = ctx.dims();
 
+//     std::cout << listDims(ctx) << std::endl;
     for (auto di = dims.begin(); di != dims.end(); ++di)
     {
         Dimension::Type::Enum t = ctx.dimType(*di);
@@ -220,21 +254,27 @@ template <typename CompressionStream> inline PointBufferPtr Decompress(PointCont
         if (t == Dimension::Type::Signed32)
         {
             if (s == 4)
+            {
                 decompressor->template add_field<int>();
+            }
             else
                 throw pdal_error("Dimension is type Signed32 but size != 4!");
         }
         else if (t == Dimension::Type::Signed16)
         {
             if (s == 2)
+            {
                 decompressor->template add_field<short>();
+            }
             else
                 throw pdal_error("Dimension is type Signed16 but size != 2  !");
         }
         else if (t == Dimension::Type::Signed8)
         {
             if (s == 1)
+            {
                 decompressor->template add_field<char>();
+            }
             else
                 throw pdal_error("Dimension is type Signed8 but size != 1!");
         }
@@ -251,21 +291,27 @@ template <typename CompressionStream> inline PointBufferPtr Decompress(PointCont
         else if (t == Dimension::Type::Unsigned32)
         {
             if (s == 4)
+            {
                 decompressor->template add_field<unsigned int>();
+            }
             else
                 throw pdal_error("Dimension is type Unsigned32 but size != 4!");
         }
         else if (t == Dimension::Type::Unsigned16)
         {
             if (s == 2)
+            {
                 decompressor->template add_field<unsigned short>();
+            }
             else
                 throw pdal_error("Dimension is type Unsigned16 but size != 2!");
         }
         else if (t == Dimension::Type::Unsigned8)
         {
             if (s == 1)
+            {
                 decompressor->template add_field<unsigned char>();
+            }
             else
                 throw pdal_error("Dimension is type Unsigned8 but size != 1!");
         }
@@ -283,14 +329,18 @@ template <typename CompressionStream> inline PointBufferPtr Decompress(PointCont
         else if (t == Dimension::Type::Double)
         {
             if (s == 8)
+            {
                 decompressor->template add_field<las::gpstime>();
+            }
             else
                 throw pdal_error("Dimension is type Double but size != 8!");
         }
         else if (t == Dimension::Type::Float)
         {
             if (s == 4)
+            {
                 decompressor->template add_field<int>();
+            }
             else
                 throw pdal_error("Dimension is type Float but size != 4!");
         }
@@ -305,12 +355,11 @@ template <typename CompressionStream> inline PointBufferPtr Decompress(PointCont
     }
 
 
-//     uint8_t* pos = &(strm.buf.front());
     std::vector<uint8_t> output;
     output.resize(howMany * ctx.pointSize());
     uint8_t* pos = &(output[0]);
     size_t point_size = ctx.pointSize();
-    PointId i(0);
+
     uint8_t* end_pos = pos + (point_size * howMany);
     while (pos != end_pos)
     {
@@ -319,7 +368,6 @@ template <typename CompressionStream> inline PointBufferPtr Decompress(PointCont
     }
 
     PointBufferPtr b = PointBufferPtr(new PointBuffer(output, ctx));
-//     std::cout << *b << std::endl;
 
     return b;
 

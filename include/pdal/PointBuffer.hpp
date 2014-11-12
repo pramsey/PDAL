@@ -267,6 +267,7 @@ public:
         if (bytes.size() % ctx.pointSize())
             throw pdal_error("byte count is not a multiple of point size!");
 
+//         assert(ctx.m_dims->m_used.size() == ctx.m_dims->m_detail.size());
         const uint8_t* pos = &(bytes[0]);
         for (PointId i = 0; i < pointCount; ++i)
         {
