@@ -80,5 +80,6 @@ then
     cd $TRAVIS_BUILD_DIR
 fi
 
+cmake --version
 gcc --version
 clang --version
