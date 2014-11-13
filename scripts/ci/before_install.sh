@@ -12,49 +12,33 @@ sudo apt-get install python-software-properties -y
 sudo add-apt-repository ppa:ubuntugis/ubuntugis-unstable -y
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
 sudo add-apt-repository ppa:boost-latest/ppa -y
-sudo add-apt-repository ppa:andykimpe/cmake3 -y
 sudo apt-get update -qq
-
 
 # Install g++-4.8 (even if we're building clang) for updated libstdc++
 sudo apt-get install g++-4.8
 
 sudo apt-get install boost1.55
 
-echo "*** About to get cmake3"
-sudo apt-get install cmake3 > /dev/null
-echo "*** Done installing cmake3"
+if [[ $PDAL_CMAKE_GENERATOR == "Ninja" ]]
+then
+    # Need newer cmake for Ninja generator
+    wget http://www.cmake.org/files/v2.8/cmake-2.8.12.2.tar.gz
+    tar -xzf cmake-2.8.12.2.tar.gz
+    cd cmake-2.8.12.2
+    ./bootstrap
+    make
+    sudo make install
+    cd ..
 
-#
-# Ninja
-#
-git clone https://github.com/martine/ninja.git
-cd ninja
-git checkout release
-./bootstrap.py
-sudo ln -s "$PWD/ninja" /usr/local/bin/ninja
-cd ..
-
-#if [[ $PDAL_CMAKE_GENERATOR == "Ninja" ]]
-#then
-#    # Need newer cmake for Ninja generator
-#    wget http://www.cmake.org/files/v2.8/cmake-2.8.12.2.tar.gz
-#    tar -xzf cmake-2.8.12.2.tar.gz
-#    cd cmake-2.8.12.2
-#    ./bootstrap
-#    make
-#    sudo make install
-#    cd ..
-
-#    git clone https://github.com/martine/ninja.git
-#    cd ninja
-#    git checkout release
-#    ./bootstrap.py
-#    sudo ln -s "$PWD/ninja" /usr/local/bin/ninja
-#    cd ..
-#else
-#    sudo apt-get install cmake
-#fi
+    git clone https://github.com/martine/ninja.git
+    cd ninja
+    git checkout release
+    ./bootstrap.py
+    sudo ln -s "$PWD/ninja" /usr/local/bin/ninja
+    cd ..
+else
+    sudo apt-get install cmake
+fi
 
 
 # GDAL is now always required
@@ -82,6 +66,5 @@ then
     cd $TRAVIS_BUILD_DIR
 fi
 
-cmake3 --version
 gcc --version
 clang --version
