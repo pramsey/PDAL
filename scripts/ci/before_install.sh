@@ -21,7 +21,9 @@ sudo apt-get install g++-4.8
 
 sudo apt-get install boost1.55
 
-sudo apt-get install cmake
+echo "*** About to get cmake3"
+sudo apt-get install cmake3
+echo "*** Done installing cmake3"
 
 #
 # Ninja
