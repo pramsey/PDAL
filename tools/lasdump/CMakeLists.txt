@@ -11,6 +11,11 @@ include(${ROOT_DIR}/cmake/common.cmake NO_POLICY_SCOPE)
 add_subdirectory(${PDAL_UTIL_DIR} "${CMAKE_CURRENT_BINARY_DIR}/util")
 include_directories(${PDAL_UTIL_DIR} ${PDAL_INCLUDE_DIR})
 
+#
+# Add necessary modules.
+#
+find_package(LASzip)
+
 set (SOURCES
     Dumper.cpp
     Header.cpp
@@ -22,11 +27,6 @@ set (HEADERS
     Lasdump.hpp
     Vlr.hpp
 )
-
-#
-# Add necessary modules.
-#
-find_package(LASzip)
 
 add_executable(lasdump ${SOURCES} ${HEADERS})
 target_link_libraries(lasdump
