@@ -31,6 +31,7 @@ set(PDAL_BASE_HPP
   "${PDAL_HEADERS_DIR}/pdal_error.hpp"
   "${PDAL_HEADERS_DIR}/pdal_types.hpp"
   "${PDAL_HEADERS_DIR}/Charbuf.hpp"
+  "${PDAL_HEADERS_DIR}/Compression.hpp"
   "${PDAL_HEADERS_DIR}/Dimension.hpp"
   "${PDAL_HEADERS_DIR}/Drivers.hpp"
   "${PDAL_HEADERS_DIR}/FileUtils.hpp"
@@ -104,6 +105,7 @@ set(PDAL_BASE_CPP
   Writer.cpp
   third/md5-pdal.c
   ${PDAL_XML_SRC}
+  ${PDAL_LAZPERF_SRC}
     ${PDAL_KERNEL_SRC}/Kernel.cpp
     ${PDAL_KERNEL_SRC}/KernelFactory.cpp
     ${PDAL_KERNEL_SRC}/KernelInfo.cpp
