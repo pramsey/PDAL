@@ -19,7 +19,7 @@ set (SOURCES
 set (HEADERS
     Dumper.hpp
     Header.hpp
-    LasDump.hpp
+    Lasdump.hpp
     Vlr.hpp
 )
 
