@@ -26,7 +26,7 @@ set (HEADERS
 #
 # Add necessary modules.
 #
-find_package(LASZIP)
+find_package(LASzip)
 
 add_executable(lasdump ${SOURCES} ${HEADERS})
 target_link_libraries(lasdump
