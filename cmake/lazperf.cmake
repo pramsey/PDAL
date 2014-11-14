@@ -1,0 +1,11 @@
+option(WITH_COMPRESSION
+    "Choose to use laz-perf compression for database drivers" FALSE)
+if (WITH_COMPRESSION)
+    find_package(Lazperf)
+    if (LAZPERF_FOUND)
+        include_directories(${LAZPERF_INCLUDE_DIR})
+        set(PDAL_HAVE_LAZPERF 1)
+    else()
+        set(WITH_COMPRESSION FALSE)
+    endif()
+endif()
